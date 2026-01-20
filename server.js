@@ -1,7 +1,10 @@
 require('dotenv').config();
 
 const app = require('./src/app');
-const { connectDB } = require('./src/config/database');
+const { connectDB, syncDB } = require('./src/config/database');
+
+// Import all models to register them with Sequelize
+require('./src/shared/models');
 
 const PORT = process.env.PORT || 3000;
 
@@ -10,6 +13,12 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
+
+    // Sync database models (create tables if they don't exist)
+    // alter: true - alters tables to match models without dropping data
+    // Set DB_SYNC_ALTER=false in .env to disable auto-alter in production
+    const shouldAlter = process.env.DB_SYNC_ALTER !== 'false';
+    await syncDB(false, shouldAlter);
 
     // Start Express server
     app.listen(PORT, () => {

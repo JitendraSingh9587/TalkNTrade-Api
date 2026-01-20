@@ -6,13 +6,13 @@ const { sequelize } = require('../../config/database');
  * Models are organized by modules in src/modules/{moduleName}/models/
  */
 
-// Example: Import models from modules
-// const { User } = require('../../modules/users/models/User');
-// const { Product } = require('../../modules/products/models/Product');
+const { User, UserSession } = require('../../modules/users/models');
+const { AuditLog } = require('../../modules/audit/models');
 
 // Export sequelize instance and models
 module.exports = {
   sequelize,
-  // User,
-  // Product,
+  User,
+  UserSession,
+  AuditLog,
 };

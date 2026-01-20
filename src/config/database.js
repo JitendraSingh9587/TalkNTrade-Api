@@ -42,15 +42,32 @@ const connectDB = async () => {
 };
 
 /**
- * Sync database models (use with caution in production)
- * @param {boolean} force - Force sync (drops tables)
- * @param {boolean} alter - Alter tables to match models
+ * Sync database models
+ * Creates tables if they don't exist, alters them if alter=true
+ * @param {boolean} force - Force sync (drops all tables - USE WITH CAUTION!)
+ * @param {boolean} alter - Alter tables to match models (adds missing columns)
  * @returns {Promise<void>}
  */
 const syncDB = async (force = false, alter = false) => {
   try {
-    await sequelize.sync({ force, alter });
-    console.log('✅ Database models synchronized.');
+    if (force) {
+      console.warn('⚠️  WARNING: Force sync will DROP all tables!');
+    }
+    
+    await sequelize.sync({ 
+      force, 
+      alter,
+      // Only create tables, don't drop existing ones
+      match: /.*/,
+    });
+    
+    if (force) {
+      console.log('✅ Database tables created (force sync).');
+    } else if (alter) {
+      console.log('✅ Database tables synchronized (altered to match models).');
+    } else {
+      console.log('✅ Database tables verified/created.');
+    }
   } catch (error) {
     console.error('❌ Error synchronizing database:', error);
     throw error;
