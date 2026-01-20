@@ -8,6 +8,24 @@ Node.js server with Swagger documentation and Nodemon for development.
 npm install
 ```
 
+## Database Setup
+
+1. Create a MySQL database:
+```sql
+CREATE DATABASE talkntrade;
+```
+
+2. Update `.env` file with your database credentials:
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=talkntrade
+DB_USER=root
+DB_PASSWORD=your_password
+```
+
+3. The server will automatically connect to the database on startup.
+
 ## Development
 
 Run the server with auto-reload:
@@ -44,7 +62,19 @@ Once the server is running, visit:
     ├── app.js             # Express app configuration
     ├── config/
     │   ├── swagger.js     # Swagger configuration
-    │   └── database.js    # Database configuration
+    │   └── database.js    # Sequelize database configuration
+    ├── modules/           # Feature modules (Modular Monolith)
+    │   └── {moduleName}/
+    │       ├── controllers/
+    │       ├── services/
+    │       ├── models/    # Module-specific models
+    │       ├── routes/
+    │       ├── validators/
+    │       └── entities/
+    ├── shared/            # Shared code across modules
+    │   ├── models/       # Shared model exports
+    │   ├── utils/
+    │   └── services/
     ├── controllers/       # Request handlers
     │   └── healthController.js
     ├── routes/            # API routes

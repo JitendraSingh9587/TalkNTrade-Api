@@ -1,0 +1,155 @@
+# Modular Monolith Architecture Rules
+
+## Architecture Overview
+This project follows **Modular Monolith Architecture** principles. The codebase is organized into self-contained modules by business domain/feature, each with clear boundaries and well-defined interfaces.
+
+## Core Principles
+
+### 1. Module Organization
+- **Each module represents a business domain/feature** (e.g., `users`, `products`, `orders`, `payments`)
+- Modules are located in `src/modules/` directory
+- Each module is self-contained with its own:
+  - Controllers (`controllers/`)
+  - Services (`services/`)
+  - Models (`models/`)
+  - Routes (`routes/`)
+  - Validators (`validators/`)
+  - DTOs/Entities (`entities/` or `dto/`)
+
+### 2. Module Structure
+```
+src/modules/{moduleName}/
+├── controllers/       # HTTP request handlers
+├── services/          # Business logic
+├── models/            # Data models/schemas
+├── routes/            # Express routes
+├── validators/        # Request validation
+├── entities/          # Domain entities/DTOs
+├── repositories/      # Data access layer (optional)
+└── index.js           # Module exports
+```
+
+### 3. Module Boundaries
+- **Modules MUST NOT directly import from other modules**
+- Inter-module communication happens through:
+  - Shared events/event bus
+  - Shared services (in `src/shared/services/`)
+  - Well-defined interfaces/contracts
+- Use dependency injection for cross-module dependencies
+
+### 4. Shared Code
+- Common utilities → `src/shared/utils/`
+- Shared middleware → `src/middleware/` (or `src/shared/middleware/`)
+- Shared types/interfaces → `src/shared/types/`
+- Shared constants → `src/shared/constants/`
+- Database connection → `src/config/database.js`
+- Shared services → `src/shared/services/`
+
+### 5. Code Organization Rules
+
+#### Controllers
+- **Thin controllers**: Only handle HTTP concerns (request/response)
+- Delegate business logic to services
+- Use asyncHandler wrapper for error handling
+- Return standardized responses using response utilities
+
+#### Services
+- **Business logic lives here**
+- Services can call other services within the same module
+- For cross-module operations, use shared services or events
+- Services should be pure functions when possible (no side effects unless necessary)
+
+#### Models
+- Database models/schemas belong to the module
+- Use repository pattern if complex data access logic exists
+- Models should be module-specific
+
+#### Routes
+- Routes are module-specific
+- Mount module routes in `src/routes/index.js`
+- Use route versioning: `/api/v1/{module}/...`
+
+### 6. Naming Conventions
+- **Modules**: lowercase, plural (e.g., `users`, `products`, `orders`)
+- **Files**: camelCase (e.g., `userController.js`, `orderService.js`)
+- **Classes**: PascalCase (e.g., `UserService`, `OrderRepository`)
+- **Functions**: camelCase (e.g., `getUserById`, `createOrder`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_COUNT`)
+
+### 7. Dependency Rules
+- ✅ Module → Shared code
+- ✅ Module → Config
+- ✅ Module → Utils
+- ✅ Module → Middleware
+- ❌ Module → Another Module (use shared services/events instead)
+- ❌ Shared code → Module (shared code should be independent)
+
+### 8. Error Handling
+- Use centralized error handling middleware
+- Create module-specific error classes if needed
+- Errors should be domain-specific and meaningful
+- Use HTTP status codes appropriately
+
+### 9. Testing Structure
+- Each module should have its own tests
+- Test structure mirrors module structure:
+  ```
+  tests/modules/{moduleName}/
+  ├── controllers/
+  ├── services/
+  └── models/
+  ```
+
+### 10. API Design
+- RESTful API design
+- Use resource-based URLs: `/api/v1/{module}/{resource}`
+- Version APIs: `/api/v1/`, `/api/v2/`
+- Document APIs with Swagger/OpenAPI
+- Use consistent response formats
+
+### 11. Database
+- Each module can have its own models
+- Use migrations for schema changes
+- Consider module-specific database schemas if needed
+- Shared database connection from config
+
+### 12. When Creating New Features
+1. **Identify the module** (existing or new)
+2. **Create module structure** if new module
+3. **Follow the module pattern**: controllers → services → models
+4. **Add routes** and mount in main routes file
+5. **Add validators** for request validation
+6. **Write tests** for the module
+7. **Document API** with Swagger
+
+### 13. Code Quality Standards
+- Use clean, meaningful names
+- Add JSDoc comments for functions/classes
+- Keep functions small and focused (single responsibility)
+- Avoid deep nesting (max 3 levels)
+- Use async/await instead of callbacks
+- Handle errors explicitly
+- Log important operations
+- No hardcoded values (use constants/config)
+
+### 14. Example Module Creation
+When asked to create a new feature/module:
+1. Create `src/modules/{moduleName}/` directory
+2. Create subdirectories: controllers, services, models, routes, validators
+3. Implement following the pattern:
+   - Route → Controller → Service → Model
+4. Export module in `src/modules/{moduleName}/index.js`
+5. Mount routes in `src/routes/index.js`
+
+### 15. Migration from Current Structure
+- Existing code in `src/controllers/`, `src/services/`, etc. should gradually move to modules
+- New features MUST follow modular structure
+- Refactor existing code when modifying it
+
+## Important Notes
+- **Always think in terms of modules and boundaries**
+- **If unsure which module a feature belongs to, ask or create a new module**
+- **Prefer composition over inheritance**
+- **Keep modules loosely coupled**
+- **Each module should be independently testable**
+- **Document module interfaces and contracts**

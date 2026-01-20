@@ -1,15 +1,15 @@
 /**
- * Models directory
- * Add your database models here
+ * Models directory - Legacy location
  * 
- * Example:
- * const User = require('./User');
- * const Product = require('./Product');
+ * Note: According to Modular Monolith Architecture,
+ * models should be in src/modules/{moduleName}/models/
  * 
- * module.exports = {
- *   User,
- *   Product,
- * };
+ * This file is kept for backward compatibility.
+ * New models should be created in module-specific directories.
  */
 
-module.exports = {};
+const { sequelize } = require('../config/database');
+
+module.exports = {
+  sequelize,
+};
