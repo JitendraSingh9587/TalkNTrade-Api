@@ -2,7 +2,7 @@ const User = require('./User');
 const UserSession = require('./UserSession');
 
 /**
- * Define model relationships for Users module
+ * Define model relationships
  */
 const defineRelationships = () => {
   // User has many UserSessions

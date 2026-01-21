@@ -1,15 +1,22 @@
+const { sequelize } = require('../config/database');
+const User = require('./User');
+const UserSession = require('./UserSession');
+const AuditLog = require('./AuditLog');
+const AppSetting = require('./AppSetting');
+const defineRelationships = require('./relationships');
+
 /**
- * Models directory - Legacy location
- * 
- * Note: According to Modular Monolith Architecture,
- * models should be in src/modules/{moduleName}/models/
- * 
- * This file is kept for backward compatibility.
- * New models should be created in module-specific directories.
+ * Models directory
+ * All database models are centralized here
  */
 
-const { sequelize } = require('../config/database');
+// Initialize relationships
+defineRelationships();
 
 module.exports = {
   sequelize,
+  User,
+  UserSession,
+  AuditLog,
+  AppSetting,
 };

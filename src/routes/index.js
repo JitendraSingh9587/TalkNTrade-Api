@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const healthRoutes = require('./healthRoutes');
-const userRoutes = require('../modules/users/routes/userRoutes');
+const userRoutes = require('./userRoutes');
 
 // Mount routes
 router.use('/', healthRoutes);

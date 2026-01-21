@@ -69,7 +69,25 @@ const syncDB = async (force = false, alter = false) => {
       console.log('✅ Database tables verified/created.');
     }
   } catch (error) {
-    console.error('❌ Error synchronizing database:', error);
+    // Handle "Too many keys" error - common when table has too many indexes
+    if (error.name === 'SequelizeDatabaseError' && 
+        error.parent && 
+        error.parent.code === 'ER_TOO_MANY_KEYS') {
+      console.error('❌ Error: Table has too many indexes (MySQL limit: 64 keys)');
+      console.error('💡 Solution: Drop the problematic table(s) and restart server');
+      console.error('   Example SQL: DROP TABLE IF EXISTS users;');
+      console.error('   Or set DB_SYNC_ALTER=false in .env to skip auto-alter');
+      console.error('\n📝 Error details:', error.parent.sqlMessage);
+      
+      // In development, we can continue without alter
+      if (process.env.NODE_ENV === 'development' && alter) {
+        console.warn('⚠️  Continuing without table alterations in development mode...');
+        console.warn('⚠️  Tables exist but may not match models exactly.');
+        return; // Don't throw, allow server to start
+      }
+    }
+    
+    console.error('❌ Error synchronizing database:', error.message);
     throw error;
   }
 };

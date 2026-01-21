@@ -4,7 +4,7 @@ const app = require('./src/app');
 const { connectDB, syncDB } = require('./src/config/database');
 
 // Import all models to register them with Sequelize
-require('./src/shared/models');
+require('./src/models');
 
 const PORT = process.env.PORT || 3000;
 

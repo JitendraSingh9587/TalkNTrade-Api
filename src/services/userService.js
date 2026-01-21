@@ -1,6 +1,6 @@
 const { User } = require('../models');
 const { Op } = require('sequelize');
-const { hashPassword } = require('../../../shared/utils/password');
+const { hashPassword } = require('../shared/utils/password');
 
 /**
  * User Service

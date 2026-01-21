@@ -1,6 +1,6 @@
 const userService = require('../services/userService');
 const { validateCreateUser, validateUpdateUser } = require('../validators/userValidator');
-const { sendSuccess, sendError } = require('../../../utils/response');
+const { sendSuccess, sendError } = require('../utils/response');
 
 /**
  * User Controller

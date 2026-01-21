@@ -1,15 +1,5 @@
-/**
- * Services directory
- * Add your business logic services here
- * 
- * Example:
- * const userService = require('./userService');
- * const productService = require('./productService');
- * 
- * module.exports = {
- *   userService,
- *   productService,
- * };
- */
+const userService = require('./userService');
 
-module.exports = {};
+module.exports = {
+  userService,
+};

@@ -1,13 +1,17 @@
-const { sequelize } = require('../../config/database');
-
 /**
  * Shared models index
- * Import and export all models here
- * Models are organized by modules in src/modules/{moduleName}/models/
+ * Re-exports models from src/models/ for backward compatibility
+ * 
+ * Note: All models are now in src/models/ directory
  */
 
-const { User, UserSession } = require('../../modules/users/models');
-const { AuditLog } = require('../../modules/audit/models');
+const {
+  sequelize,
+  User,
+  UserSession,
+  AuditLog,
+  AppSetting,
+} = require('../../models');
 
 // Export sequelize instance and models
 module.exports = {
@@ -15,4 +19,5 @@ module.exports = {
   User,
   UserSession,
   AuditLog,
+  AppSetting,
 };

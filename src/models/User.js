@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../../../config/database');
+const { sequelize } = require('../config/database');
 
 /**
  * User Model
@@ -68,8 +68,6 @@ const User = sequelize.define(
     updatedAt: 'updated_at',
     charset: 'utf8mb4',
     indexes: [
-      { fields: ['email'] },
-      { fields: ['mobile'] },
       { fields: ['role'] },
       { fields: ['is_disabled'] },
     ],
