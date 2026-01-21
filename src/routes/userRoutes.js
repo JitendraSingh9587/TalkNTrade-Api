@@ -161,9 +161,9 @@ router.put('/:id', asyncHandler(updateUser));
 
 /**
  * @swagger
- * /api/v1/users/{id}/disable:
+ * /api/v1/users/{id}/delete:
  *   post:
- *     summary: Disable user (soft delete)
+ *     summary: Delete user (soft delete - disables user)
  *     tags: [Users]
  *     parameters:
  *       - in: path
@@ -173,13 +173,13 @@ router.put('/:id', asyncHandler(updateUser));
  *           type: integer
  *     responses:
  *       200:
- *         description: User disabled successfully
+ *         description: User deleted successfully
  *       400:
  *         description: User already disabled
  *       404:
  *         description: User not found
  */
-router.post('/:id/disable', asyncHandler(disableUser));
+router.post('/:id/delete', asyncHandler(disableUser));
 
 /**
  * @swagger
