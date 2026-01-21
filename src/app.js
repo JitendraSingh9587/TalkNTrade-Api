@@ -13,6 +13,22 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Handle JSON parsing errors
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid JSON format. Please check your request body.',
+      error: {
+        message: err.message,
+        ...(process.env.NODE_ENV === 'development' && { details: 'Common issues: trailing commas, unquoted keys, or invalid JSON syntax' }),
+      },
+    });
+  }
+  next(err);
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 

@@ -42,7 +42,6 @@ const AppSetting = sequelize.define(
     updatedAt: 'updated_at',
     charset: 'utf8mb4',
     indexes: [
-      { fields: ['key'] },
       { fields: ['is_active'] },
     ],
   }
