@@ -10,6 +10,8 @@ const {
   updateSettingByKey,
   deleteSetting,
   deleteSettingByKey,
+  refreshCache,
+  getCachedSettings,
 } = require('../controllers/settingsController');
 
 /**
@@ -51,6 +53,66 @@ const {
  *         description: List of settings
  */
 router.get('/', asyncHandler(getAllSettings));
+
+/**
+ * @swagger
+ * /api/v1/settings/cache:
+ *   get:
+ *     summary: Get cached settings
+ *     tags: [Settings]
+ *     description: Returns all settings currently loaded in memory cache
+ *     responses:
+ *       200:
+ *         description: Cached settings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     settings:
+ *                       type: object
+ *                     count:
+ *                       type: integer
+ *                     isLoaded:
+ *                       type: boolean
+ */
+router.get('/cache', asyncHandler(getCachedSettings));
+
+/**
+ * @swagger
+ * /api/v1/settings/cache/refresh:
+ *   post:
+ *     summary: Refresh settings cache (hot reload)
+ *     tags: [Settings]
+ *     description: Reloads all active settings from database into memory cache. Use this after updating settings to apply changes without restarting the server.
+ *     responses:
+ *       200:
+ *         description: Settings cache refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     settings:
+ *                       type: object
+ *                     count:
+ *                       type: integer
+ */
+router.post('/cache/refresh', asyncHandler(refreshCache));
 
 /**
  * @swagger

@@ -1,4 +1,5 @@
 const settingsService = require('../services/settingsService');
+const settingsCache = require('../shared/services/settingsCache');
 const { validateCreateSetting, validateUpdateSetting } = require('../validators/settingsValidator');
 const { sendSuccess, sendError } = require('../utils/response');
 
@@ -153,6 +154,43 @@ const deleteSettingByKey = async (req, res) => {
   }
 };
 
+/**
+ * Refresh settings cache (hot reload)
+ * Reloads all settings from database into cache
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const refreshCache = async (req, res) => {
+  try {
+    await settingsCache.refreshCache();
+    const allSettings = settingsCache.getAllSettings();
+    sendSuccess(res, {
+      settings: allSettings,
+      count: Object.keys(allSettings).length,
+    }, 'Settings cache refreshed successfully');
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+/**
+ * Get cached settings
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const getCachedSettings = async (req, res) => {
+  try {
+    const allSettings = settingsCache.getAllSettings();
+    sendSuccess(res, {
+      settings: allSettings,
+      count: Object.keys(allSettings).length,
+      isLoaded: settingsCache.isCacheLoaded(),
+    }, 'Cached settings retrieved successfully');
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   getAllSettings,
   getSettingById,
@@ -162,4 +200,6 @@ module.exports = {
   updateSettingByKey,
   deleteSetting,
   deleteSettingByKey,
+  refreshCache,
+  getCachedSettings,
 };

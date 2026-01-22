@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const app = require('./src/app');
 const { connectDB, syncDB } = require('./src/config/database');
+const { seedSettings } = require('./src/seeders/settingsSeeder');
+const settingsCache = require('./src/shared/services/settingsCache');
 
 // Import all models to register them with Sequelize
 require('./src/models');
@@ -19,6 +21,12 @@ const startServer = async () => {
     // Set DB_SYNC_ALTER=false in .env to disable auto-alter in production
     const shouldAlter = process.env.DB_SYNC_ALTER !== 'false';
     await syncDB(false, shouldAlter);
+
+    // Seed settings (JWT secrets, etc.)
+    await seedSettings();
+
+    // Load settings into cache
+    await settingsCache.loadSettings();
 
     // Start Express server
     app.listen(PORT, () => {

@@ -1,9 +1,33 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const settingsCache = require('../services/settingsCache');
 
 /**
  * JWT utility functions
+ * Uses settings cache for JWT secrets (loaded from database)
  */
+
+/**
+ * Get JWT secret from settings cache or fallback to env
+ * @param {string} key - Secret key name (JWT_SECRET or JWT_REFRESH_SECRET)
+ * @param {string} fallback - Fallback value if not found
+ * @returns {string} JWT secret
+ */
+const getJWTSecret = (key, fallback) => {
+  // Try to get from settings cache first
+  const cachedSecret = settingsCache.getSetting(key);
+  if (cachedSecret) {
+    return cachedSecret;
+  }
+  
+  // Fallback to environment variable
+  if (process.env[key]) {
+    return process.env[key];
+  }
+  
+  // Final fallback
+  return fallback || 'your-secret-key-change-in-production';
+};
 
 /**
  * Generate JWT access token
@@ -12,7 +36,7 @@ const crypto = require('crypto');
  * @returns {string} JWT token
  */
 const generateAccessToken = (payload, expiresIn = '1h') => {
-  const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  const secret = getJWTSecret('JWT_SECRET', 'your-secret-key-change-in-production');
   return jwt.sign(payload, secret, { expiresIn });
 };
 
@@ -23,7 +47,7 @@ const generateAccessToken = (payload, expiresIn = '1h') => {
  * @returns {string} JWT refresh token
  */
 const generateRefreshToken = (payload, expiresIn = '7d') => {
-  const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-refresh-secret-key-change-in-production';
+  const secret = getJWTSecret('JWT_REFRESH_SECRET', getJWTSecret('JWT_SECRET', 'your-refresh-secret-key-change-in-production'));
   return jwt.sign(payload, secret, { expiresIn });
 };
 
@@ -33,7 +57,7 @@ const generateRefreshToken = (payload, expiresIn = '7d') => {
  * @returns {Object} Decoded token payload
  */
 const verifyAccessToken = (token) => {
-  const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  const secret = getJWTSecret('JWT_SECRET', 'your-secret-key-change-in-production');
   return jwt.verify(token, secret);
 };
 
@@ -43,7 +67,7 @@ const verifyAccessToken = (token) => {
  * @returns {Object} Decoded token payload
  */
 const verifyRefreshToken = (token) => {
-  const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-refresh-secret-key-change-in-production';
+  const secret = getJWTSecret('JWT_REFRESH_SECRET', getJWTSecret('JWT_SECRET', 'your-refresh-secret-key-change-in-production'));
   return jwt.verify(token, secret);
 };
 

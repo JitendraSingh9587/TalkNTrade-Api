@@ -1,5 +1,6 @@
 const { AppSetting } = require('../models');
 const { Op } = require('sequelize');
+const settingsCache = require('../shared/services/settingsCache');
 
 /**
  * Settings Service
@@ -103,6 +104,12 @@ const createSetting = async (settingData) => {
   }
 
   const setting = await AppSetting.create(settingData);
+  
+  // Refresh cache if setting is active
+  if (setting.is_active) {
+    await settingsCache.refreshCache();
+  }
+  
   return setting;
 };
 
@@ -135,6 +142,10 @@ const updateSetting = async (id, updateData) => {
   }
 
   await setting.update(updateData);
+  
+  // Refresh cache after update
+  await settingsCache.refreshCache();
+  
   return setting;
 };
 
@@ -156,6 +167,10 @@ const updateSettingByKey = async (key, updateData) => {
   }
 
   await setting.update(updateData);
+  
+  // Refresh cache after update
+  await settingsCache.refreshCache();
+  
   return setting;
 };
 
@@ -174,6 +189,9 @@ const deleteSetting = async (id) => {
   }
 
   await setting.destroy();
+  
+  // Refresh cache after delete
+  await settingsCache.refreshCache();
 };
 
 /**
@@ -193,6 +211,9 @@ const deleteSettingByKey = async (key) => {
   }
 
   await setting.destroy();
+  
+  // Refresh cache after delete
+  await settingsCache.refreshCache();
 };
 
 module.exports = {
