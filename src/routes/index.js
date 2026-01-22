@@ -3,9 +3,11 @@ const router = express.Router();
 const healthRoutes = require('./healthRoutes');
 const userRoutes = require('./userRoutes');
 const settingsRoutes = require('./settingsRoutes');
+const authRoutes = require('./authRoutes');
 
 // Mount routes
 router.use('/', healthRoutes);
+router.use('/v1/auth', authRoutes);
 router.use('/v1/users', userRoutes);
 router.use('/v1/settings', settingsRoutes);
 
