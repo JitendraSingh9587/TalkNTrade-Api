@@ -8,14 +8,20 @@ const { AppSetting } = require('../models');
 const settingsData = [
   {
     key: 'JWT_SECRET',
-    value:  'your-super-secret-jwt-key-change-in-production',
+    value:  'e506a374-2ad5-4ba9-855a-49544fe547dc',
     description: 'JWT access token secret key',
     is_active: true,
   },
   {
     key: 'JWT_REFRESH_SECRET',
-    value: 'your-super-secret-refresh-key-change-in-production',
+    value: 'a757479b-f3fa-4499-b087-33a06b06154a',
     description: 'JWT refresh token secret key',
+    is_active: true,
+  },
+  {
+    key: 'MAX_LOGIN_SESSIONS',
+    value: '2',
+    description: 'Maximum number of concurrent login sessions allowed per user',
     is_active: true,
   },
 ];

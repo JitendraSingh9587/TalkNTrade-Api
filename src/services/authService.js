@@ -7,6 +7,7 @@ const {
   hashToken,
   getTokenExpiration,
 } = require('../shared/utils/jwt');
+const settingsCache = require('../shared/services/settingsCache');
 
 /**
  * Auth Service
@@ -69,6 +70,41 @@ const login = async (identifier, password, deviceInfo = {}) => {
   // Calculate expiration dates
   const accessTokenExpiresAt = getTokenExpiration(3600); // 1 hour
   const refreshTokenExpiresAt = getTokenExpiration(604800); // 7 days
+
+  // Get maximum login sessions from settings (default: 2)
+  const maxSessions = parseInt(settingsCache.getSetting('MAX_LOGIN_SESSIONS', '2'), 10);
+
+  // Check current active sessions for this user
+  const activeSessions = await UserSession.findAll({
+    where: {
+      user_id: user.id,
+      is_active: true,
+      refresh_token_expires_at: {
+        [Op.gt]: new Date(), // Only count non-expired sessions
+      },
+    },
+    order: [['created_at', 'ASC']], // Oldest first
+  });
+
+  // If user has reached max sessions, delete oldest session(s)
+  if (activeSessions.length >= maxSessions) {
+    const sessionsToDelete = activeSessions.length - maxSessions + 1; // Delete enough to make room for new session
+    
+    const sessionIdsToDelete = activeSessions
+      .slice(0, sessionsToDelete)
+      .map(session => session.id);
+    
+    // Delete old sessions
+    if (sessionIdsToDelete.length > 0) {
+      await UserSession.destroy({
+        where: {
+          id: {
+            [Op.in]: sessionIdsToDelete,
+          },
+        },
+      });
+    }
+  }
 
   // Create user session
   await UserSession.create({
