@@ -81,12 +81,60 @@ const hashToken = (token) => {
 };
 
 /**
+ * Convert expiry string to seconds
+ * @param {string} expiryString - Expiry string (e.g., '7d', '1h', '30m', '60s')
+ * @returns {number} Expiration time in seconds
+ */
+const expiryStringToSeconds = (expiryString) => {
+  if (!expiryString || typeof expiryString !== 'string') {
+    return 3600; // Default: 1 hour
+  }
+
+  const match = expiryString.match(/^(\d+)([dhms])$/i);
+  if (!match) {
+    return 3600; // Default: 1 hour if format is invalid
+  }
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  const multipliers = {
+    s: 1,           // seconds
+    m: 60,          // minutes
+    h: 3600,        // hours
+    d: 86400,       // days
+  };
+
+  return value * (multipliers[unit] || 1);
+};
+
+/**
+ * Get token expiry from settings cache
+ * @param {string} key - Setting key (ACCESS_TOKEN_EXPIRY or REFRESH_TOKEN_EXPIRY)
+ * @param {string} defaultValue - Default expiry string (e.g., '7d')
+ * @returns {string} Expiry string
+ */
+const getTokenExpiry = (key, defaultValue) => {
+  return settingsCache.getSetting(key, defaultValue);
+};
+
+/**
  * Calculate token expiration date
  * @param {number} expiresInSeconds - Expiration time in seconds
  * @returns {Date} Expiration date
  */
 const getTokenExpiration = (expiresInSeconds) => {
   return new Date(Date.now() + expiresInSeconds * 1000);
+};
+
+/**
+ * Calculate token expiration date from expiry string
+ * @param {string} expiryString - Expiry string (e.g., '7d', '1h')
+ * @returns {Date} Expiration date
+ */
+const getTokenExpirationFromString = (expiryString) => {
+  const seconds = expiryStringToSeconds(expiryString);
+  return getTokenExpiration(seconds);
 };
 
 module.exports = {
@@ -96,4 +144,7 @@ module.exports = {
   verifyRefreshToken,
   hashToken,
   getTokenExpiration,
+  expiryStringToSeconds,
+  getTokenExpiry,
+  getTokenExpirationFromString,
 };

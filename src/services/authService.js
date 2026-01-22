@@ -5,7 +5,10 @@ const {
   generateAccessToken,
   generateRefreshToken,
   hashToken,
-  getTokenExpiration,
+  getTokenExpiry,
+  expiryStringToSeconds,
+  getTokenExpirationFromString,
+  verifyAccessToken,
 } = require('../shared/utils/jwt');
 const settingsCache = require('../shared/services/settingsCache');
 
@@ -53,6 +56,10 @@ const login = async (identifier, password, deviceInfo = {}) => {
     throw error;
   }
 
+  // Get token expiry from settings
+  const accessTokenExpiry = getTokenExpiry('ACCESS_TOKEN_EXPIRY', '7d');
+  const refreshTokenExpiry = getTokenExpiry('REFRESH_TOKEN_EXPIRY', '7d');
+
   // Generate tokens
   const tokenPayload = {
     id: user.id,
@@ -60,16 +67,16 @@ const login = async (identifier, password, deviceInfo = {}) => {
     role: user.role,
   };
 
-  const accessToken = generateAccessToken(tokenPayload, '1h');
-  const refreshToken = generateRefreshToken(tokenPayload, '7d');
+  const accessToken = generateAccessToken(tokenPayload, accessTokenExpiry);
+  const refreshToken = generateRefreshToken(tokenPayload, refreshTokenExpiry);
 
   // Hash tokens for storage
   const accessTokenHash = hashToken(accessToken);
   const refreshTokenHash = hashToken(refreshToken);
 
-  // Calculate expiration dates
-  const accessTokenExpiresAt = getTokenExpiration(3600); // 1 hour
-  const refreshTokenExpiresAt = getTokenExpiration(604800); // 7 days
+  // Calculate expiration dates from expiry strings
+  const accessTokenExpiresAt = getTokenExpirationFromString(accessTokenExpiry);
+  const refreshTokenExpiresAt = getTokenExpirationFromString(refreshTokenExpiry);
 
   // Get maximum login sessions from settings (default: 2)
   const maxSessions = parseInt(settingsCache.getSetting('MAX_LOGIN_SESSIONS', '2'), 10);
@@ -140,6 +147,55 @@ const login = async (identifier, password, deviceInfo = {}) => {
   };
 };
 
+/**
+ * Logout user by deleting session
+ * @param {string} accessToken - Access token from cookie or header
+ * @returns {Promise<Object>} Logout result
+ */
+const logout = async (accessToken) => {
+  try {
+    // Verify token to get user info
+    const decoded = verifyAccessToken(accessToken);
+    
+    // Hash the token to find the session
+    const accessTokenHash = hashToken(accessToken);
+    
+    // Find and delete the session
+    const deletedCount = await UserSession.destroy({
+      where: {
+        user_id: decoded.id,
+        access_token_hash: accessTokenHash,
+        is_active: true,
+      },
+    });
+    
+    if (deletedCount === 0) {
+      // Session not found or already deleted - still return success
+      // This handles cases where token is expired or session already removed
+      return {
+        success: true,
+        message: 'Logout successful',
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Logout successful',
+    };
+  } catch (error) {
+    // If token is invalid or expired, still allow logout
+    // This handles edge cases gracefully
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return {
+        success: true,
+        message: 'Logout successful',
+      };
+    }
+    throw error;
+  }
+};
+
 module.exports = {
   login,
+  logout,
 };

@@ -24,6 +24,18 @@ const settingsData = [
     description: 'Maximum number of concurrent login sessions allowed per user',
     is_active: true,
   },
+  {
+    key: 'ACCESS_TOKEN_EXPIRY',
+    value: '7d',
+    description: 'Access token expiration time (e.g., 7d, 1h, 30m). Format: number followed by unit (d=days, h=hours, m=minutes, s=seconds)',
+    is_active: true,
+  },
+  {
+    key: 'REFRESH_TOKEN_EXPIRY',
+    value: '7d',
+    description: 'Refresh token expiration time (e.g., 7d, 1h, 30m). Format: number followed by unit (d=days, h=hours, m=minutes, s=seconds)',
+    is_active: true,
+  },
 ];
 
 /**

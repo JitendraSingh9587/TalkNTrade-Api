@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const routes = require('./routes');
@@ -11,7 +12,11 @@ const logger = require('./middleware/logger');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins (configure as needed)
+  credentials: true, // Allow cookies to be sent
+}));
+app.use(cookieParser());
 app.use(express.json());
 
 // Handle JSON parsing errors
