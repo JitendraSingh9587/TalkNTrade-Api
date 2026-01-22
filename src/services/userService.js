@@ -108,6 +108,10 @@ const createUser = async (userData) => {
     userData.password = await hashPassword(userData.password);
   }
 
+  // Auto-verify email and mobile when user is created via API
+  userData.is_email_verified = true;
+  userData.is_mobile_verified = true;
+
   const user = await User.create(userData);
   
   // Return user without password

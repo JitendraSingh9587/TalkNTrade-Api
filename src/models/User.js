@@ -60,6 +60,16 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+
+    is_mobile_verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
+    is_email_verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
   {
     tableName: 'users',
@@ -70,6 +80,8 @@ const User = sequelize.define(
     indexes: [
       { fields: ['role'] },
       { fields: ['is_disabled'] },
+      { fields: ['is_mobile_verified'] },
+      { fields: ['is_email_verified'] },
     ],
   }
 );
