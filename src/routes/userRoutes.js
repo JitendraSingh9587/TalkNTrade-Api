@@ -23,6 +23,8 @@ const {
  *   get:
  *     summary: Get all users
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -53,6 +55,10 @@ const {
  *     responses:
  *       200:
  *         description: List of users
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Insufficient permissions
  */
 router.get('/', asyncHandler(getAllUsers));
 
@@ -62,6 +68,8 @@ router.get('/', asyncHandler(getAllUsers));
  *   get:
  *     summary: Get user by ID
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -71,6 +79,10 @@ router.get('/', asyncHandler(getAllUsers));
  *     responses:
  *       200:
  *         description: User details
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Insufficient permissions
  *       404:
  *         description: User not found
  */
@@ -82,6 +94,8 @@ router.get('/:id', asyncHandler(getUserById));
  *   post:
  *     summary: Create a new user
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -111,6 +125,10 @@ router.get('/:id', asyncHandler(getUserById));
  *         description: User created successfully
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Insufficient permissions
  *       409:
  *         description: Email or mobile already exists
  */
@@ -122,6 +140,8 @@ router.post('/', asyncHandler(createUser));
  *   put:
  *     summary: Update user
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -152,8 +172,10 @@ router.post('/', asyncHandler(createUser));
  *     responses:
  *       200:
  *         description: User updated successfully
+ *       401:
+ *         description: Unauthorized - Authentication required
  *       403:
- *         description: Super admin cannot change their own role
+ *         description: Forbidden - Insufficient permissions or super admin cannot change their own role
  *       404:
  *         description: User not found
  */
@@ -165,6 +187,8 @@ router.put('/:id', asyncHandler(updateUser));
  *   post:
  *     summary: Delete user (soft delete - disables user)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -176,6 +200,10 @@ router.put('/:id', asyncHandler(updateUser));
  *         description: User deleted successfully
  *       400:
  *         description: User already disabled
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Insufficient permissions
  *       404:
  *         description: User not found
  */
@@ -187,6 +215,8 @@ router.post('/:id/delete', asyncHandler(disableUser));
  *   post:
  *     summary: Enable user
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -198,6 +228,10 @@ router.post('/:id/delete', asyncHandler(disableUser));
  *         description: User enabled successfully
  *       400:
  *         description: User already enabled
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Insufficient permissions
  *       404:
  *         description: User not found
  */

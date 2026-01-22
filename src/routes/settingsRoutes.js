@@ -27,6 +27,8 @@ const {
  *   get:
  *     summary: Get all settings
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -51,6 +53,10 @@ const {
  *     responses:
  *       200:
  *         description: List of settings
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  */
 router.get('/', asyncHandler(getAllSettings));
 
@@ -60,6 +66,8 @@ router.get('/', asyncHandler(getAllSettings));
  *   get:
  *     summary: Get cached settings
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     description: Returns all settings currently loaded in memory cache
  *     responses:
  *       200:
@@ -82,6 +90,10 @@ router.get('/', asyncHandler(getAllSettings));
  *                       type: integer
  *                     isLoaded:
  *                       type: boolean
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  */
 router.get('/cache', asyncHandler(getCachedSettings));
 
@@ -91,6 +103,8 @@ router.get('/cache', asyncHandler(getCachedSettings));
  *   post:
  *     summary: Refresh settings cache (hot reload)
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     description: Reloads all active settings from database into memory cache. Use this after updating settings to apply changes without restarting the server.
  *     responses:
  *       200:
@@ -111,6 +125,10 @@ router.get('/cache', asyncHandler(getCachedSettings));
  *                       type: object
  *                     count:
  *                       type: integer
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  */
 router.post('/cache/refresh', asyncHandler(refreshCache));
 
@@ -120,6 +138,8 @@ router.post('/cache/refresh', asyncHandler(refreshCache));
  *   get:
  *     summary: Get setting by key
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: key
@@ -129,6 +149,10 @@ router.post('/cache/refresh', asyncHandler(refreshCache));
  *     responses:
  *       200:
  *         description: Setting details
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
@@ -140,6 +164,8 @@ router.get('/key/:key', asyncHandler(getSettingByKey));
  *   get:
  *     summary: Get setting by ID
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -149,6 +175,10 @@ router.get('/key/:key', asyncHandler(getSettingByKey));
  *     responses:
  *       200:
  *         description: Setting details
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
@@ -160,6 +190,8 @@ router.get('/:id', asyncHandler(getSettingById));
  *   post:
  *     summary: Create a new setting
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -187,6 +219,10 @@ router.get('/:id', asyncHandler(getSettingById));
  *         description: Setting created successfully
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       409:
  *         description: Setting key already exists
  */
@@ -198,6 +234,8 @@ router.post('/', asyncHandler(createSetting));
  *   put:
  *     summary: Update setting by key
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: key
@@ -220,6 +258,10 @@ router.post('/', asyncHandler(createSetting));
  *     responses:
  *       200:
  *         description: Setting updated successfully
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
@@ -231,6 +273,8 @@ router.put('/key/:key', asyncHandler(updateSettingByKey));
  *   put:
  *     summary: Update setting by ID
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -255,6 +299,10 @@ router.put('/key/:key', asyncHandler(updateSettingByKey));
  *     responses:
  *       200:
  *         description: Setting updated successfully
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
@@ -266,6 +314,8 @@ router.put('/:id', asyncHandler(updateSetting));
  *   delete:
  *     summary: Delete setting by key
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: key
@@ -275,6 +325,10 @@ router.put('/:id', asyncHandler(updateSetting));
  *     responses:
  *       200:
  *         description: Setting deleted successfully
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
@@ -286,6 +340,8 @@ router.delete('/key/:key', asyncHandler(deleteSettingByKey));
  *   delete:
  *     summary: Delete setting by ID
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -295,6 +351,10 @@ router.delete('/key/:key', asyncHandler(deleteSettingByKey));
  *     responses:
  *       200:
  *         description: Setting deleted successfully
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
  *       404:
  *         description: Setting not found
  */
