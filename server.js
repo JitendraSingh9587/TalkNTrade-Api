@@ -3,6 +3,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const { connectDB, syncDB } = require('./src/config/database');
 const { seedSettings } = require('./src/seeders/settingsSeeder');
+const { seedAdminUser } = require('./src/seeders/userSeeder');
 const settingsCache = require('./src/shared/services/settingsCache');
 
 // Import all models to register them with Sequelize
@@ -24,6 +25,9 @@ const startServer = async () => {
 
     // Seed settings (JWT secrets, etc.)
     await seedSettings();
+
+    // Seed admin user
+    await seedAdminUser();
 
     // Load settings into cache
     await settingsCache.loadSettings();
