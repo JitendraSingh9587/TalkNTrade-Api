@@ -2,6 +2,7 @@ const settingsService = require('../services/settingsService');
 const settingsCache = require('../shared/services/settingsCache');
 const { validateCreateSetting, validateUpdateSetting } = require('../validators/settingsValidator');
 const { sendSuccess, sendError } = require('../utils/response');
+const { verifySMTPConnection, resetTransporter, getSMTPConfig } = require('../shared/utils/mail');
 
 /**
  * Settings Controller
@@ -191,6 +192,53 @@ const getCachedSettings = async (req, res) => {
   }
 };
 
+/**
+ * Verify SMTP connection
+ * Tests the SMTP connection with current settings
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const verifySMTP = async (req, res) => {
+  try {
+    // Reset transporter to use latest settings
+    resetTransporter();
+    
+    // Get SMTP config (without sensitive data)
+    const config = getSMTPConfig();
+    const smtpConfig = {
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      user: config.auth.user ? `${config.auth.user.substring(0, 3)}***` : 'Not set', // Mask email
+      from: settingsCache.getSetting('SMTP_FROM', ''),
+      fromName: settingsCache.getSetting('SMTP_FROM_NAME', ''),
+    };
+
+    // Verify connection
+    const isConnected = await verifySMTPConnection();
+
+    if (isConnected) {
+      sendSuccess(res, {
+        connected: true,
+        message: 'SMTP connection successful',
+        config: smtpConfig,
+      }, 'SMTP connection verified successfully');
+    } else {
+      sendError(res, {
+        connected: false,
+        message: 'SMTP connection failed. Please check your SMTP settings.',
+        config: smtpConfig,
+      }, 'SMTP connection verification failed', 400);
+    }
+  } catch (error) {
+    sendError(res, {
+      connected: false,
+      message: error.message,
+      error: error.message,
+    }, 'SMTP connection verification failed', 500);
+  }
+};
+
 module.exports = {
   getAllSettings,
   getSettingById,
@@ -202,4 +250,5 @@ module.exports = {
   deleteSettingByKey,
   refreshCache,
   getCachedSettings,
+  verifySMTP,
 };

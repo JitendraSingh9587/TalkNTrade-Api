@@ -36,6 +36,54 @@ const settingsData = [
     description: 'Refresh token expiration time (e.g., 7d, 1h, 30m). Format: number followed by unit (d=days, h=hours, m=minutes, s=seconds)',
     is_active: true,
   },
+  {
+    key: 'SMTP_HOST',
+    value: 'smtp.gmail.com',
+    description: 'SMTP server hostname',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_PORT',
+    value: '587',
+    description: 'SMTP server port (587 for TLS, 465 for SSL, 25 for unencrypted)',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_SECURE',
+    value: 'false',
+    description: 'Use SSL/TLS for SMTP connection (true for port 465, false for other ports)',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_USER',
+    value: process.env.SMTP_USER,
+    description: 'SMTP authentication username (email address)',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_PASSWORD',
+    value: process.env.SMTP_PASSWORD,
+    description: 'SMTP authentication password or app password',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_FROM',
+    value: 'jsboyana166@gmail.com',
+    description: 'Default sender email address',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_FROM_NAME',
+    value: 'TalkNTrade',
+    description: 'Default sender name',
+    is_active: true,
+  },
+  {
+    key: 'SMTP_REJECT_UNAUTHORIZED',
+    value: 'false',
+    description: 'Reject unauthorized SSL certificates (set to true in production)',
+    is_active: true,
+  },
 ];
 
 /**

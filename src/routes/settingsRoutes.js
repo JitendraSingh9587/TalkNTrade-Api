@@ -12,6 +12,7 @@ const {
   deleteSettingByKey,
   refreshCache,
   getCachedSettings,
+  verifySMTP,
 } = require('../controllers/settingsController');
 
 /**
@@ -131,6 +132,60 @@ router.get('/cache', asyncHandler(getCachedSettings));
  *         description: Forbidden - Only SUPER_ADMIN can access
  */
 router.post('/cache/refresh', asyncHandler(refreshCache));
+
+/**
+ * @swagger
+ * /api/v1/settings/smtp/verify:
+ *   post:
+ *     summary: Verify SMTP connection
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Tests the SMTP connection with current settings from database
+ *     responses:
+ *       200:
+ *         description: SMTP connection verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     connected:
+ *                       type: boolean
+ *                     message:
+ *                       type: string
+ *                     config:
+ *                       type: object
+ *                       properties:
+ *                         host:
+ *                           type: string
+ *                         port:
+ *                           type: integer
+ *                         secure:
+ *                           type: boolean
+ *                         user:
+ *                           type: string
+ *                         from:
+ *                           type: string
+ *                         fromName:
+ *                           type: string
+ *       400:
+ *         description: SMTP connection failed
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *       403:
+ *         description: Forbidden - Only SUPER_ADMIN can access
+ *       500:
+ *         description: Server error
+ */
+router.post('/smtp/verify', asyncHandler(verifySMTP));
 
 /**
  * @swagger
