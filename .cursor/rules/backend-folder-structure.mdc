@@ -1,0 +1,29 @@
+---
+description: Backend folder structure — controllers, routes, models, middleware, config, seeders
+alwaysApply: true
+---
+
+# Backend Folder Structure
+
+Follow this structure under `src/` for all backend code:
+
+```
+src/
+├── controllers/     # Request handlers (e.g. userController.js)
+├── routes/          # Route definitions (e.g. userRoutes.js)
+├── models/          # Data / domain models (e.g. userModel.js)
+├── middleware/      # Express middleware (e.g. auth.js)
+├── config/          # App and infra config (e.g. db.js, swagger.js)
+├── seeders/         # DB seed scripts only (see below)
+```
+
+## Conventions
+
+- **controllers**: Export functions that handle req/res; call models and return responses. One file per resource (e.g. `userController.js`).
+- **routes**: Define Express routers and mount controller handlers. One file per resource (e.g. `userRoutes.js`). Wire routes in `app.js`.
+- **models**: Export data shapes, validation, or DB access. One file per entity (e.g. `userModel.js`).
+- **middleware**: Export Express middleware (e.g. auth, error handler). Use for cross-cutting concerns.
+- **config**: Export configuration (DB connection, env-based options, Swagger, etc.). No business logic.
+- **seeders**: All database seeding lives under `src/seeders/`. One file per seed concern (e.g. `seedRoles.js`); optional `index.js` to run seeds in order. Do not place seed scripts in `controllers/`, `routes/`, or ad-hoc paths.
+
+When adding a new feature (e.g. "user"), create or update the relevant file in each layer: model → controller → routes, and add middleware only if needed. Add or extend seeders when initial/reference data must be loaded for dev or environments that expect seeded data.

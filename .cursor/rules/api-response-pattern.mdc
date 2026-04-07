@@ -1,0 +1,75 @@
+---
+description: Use standard API response shape for all success and error responses
+alwaysApply: true
+---
+
+# API Response Pattern
+
+All API responses must use the shared helpers from `src/utils/response.js`. Do not call `res.json()` or `res.status().json()` directly for API payloads.
+
+## Success responses
+
+- **success(res, data, message?, statusCode?)** — 200 (default) or 201. Use for GET, PUT, PATCH, DELETE.
+- **created(res, data, message?)** — 201. Use for POST that creates a resource.
+
+Shape: `{ success: true, data, message? }`
+
+## Error responses
+
+- **badRequest(res, message?, details?)** — 400
+- **unauthorized(res, message?)** — 401
+- **forbidden(res, message?)** — 403
+- **notFound(res, message?)** — 404
+- **error(res, code, message, statusCode?, details?)** — custom code/status
+- **internalError(res, message?, details?)** — 500 (avoid in routes; let error handler use it)
+
+Shape: `{ success: false, error: { code, message, details? } }`
+
+## In route/controller code
+
+```javascript
+const { success, created, notFound, badRequest } = require("../utils/response");
+
+// GET — success(res, data)
+success(res, { id: 1, name: "Foo" });
+
+// POST — created(res, data)
+created(res, { id: 1, name: "Foo" }, "User created");
+
+// 404
+notFound(res, "User not found");
+
+// 400 with validation details
+badRequest(res, "Validation failed", {
+  field: "email",
+  reason: "Invalid format",
+});
+```
+
+## Async routes
+
+Wrap async handlers with `asyncHandler` from `src/middleware/asyncHandler.js` so thrown errors are passed to the error handler:
+
+```javascript
+const asyncHandler = require("../middleware/asyncHandler");
+
+router.get(
+  "/user/:id",
+  asyncHandler(async (req, res) => {
+    const user = await findUser(req.params.id);
+    if (!user)
+      throw { statusCode: 404, code: "NOT_FOUND", message: "User not found" };
+    success(res, user);
+  }),
+);
+```
+
+## Throwing for error handler
+
+Pass errors to the global error handler with `next(err)`, or throw in async handlers wrapped with asyncHandler. Use a consistent shape so the middleware can set status/code:
+
+```javascript
+next({ statusCode: 404, code: "NOT_FOUND", message: "User not found" });
+```
+
+The middleware in `src/middleware/errorHandler.js` will send the standard error response.

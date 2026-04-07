@@ -1,0 +1,13 @@
+---
+description: Do not create DB migrations unless the user explicitly asks. Development mode; database can be dropped and recreated.
+alwaysApply: true
+---
+
+# Database: No Migrations Unless Asked
+
+We are in **development mode**. The database is not production; it can be dropped and recreated as needed.
+
+- **Do not create** SQL migration files, `drizzle-kit generate` migrations, or standalone SQL scripts (e.g. `sql/*.sql`) for schema changes **unless the user explicitly asks** for a migration.
+- **Do** update the Drizzle schema in `src/db/schema.js` when adding or changing tables/columns.
+- **Do** use `drizzle-kit push` (or equivalent) for applying schema to the database during development—no migration history required until requested.
+- If the user asks for migrations, incremental migrations, or production-safe schema rollout, then create them as requested.

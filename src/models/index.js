@@ -3,6 +3,7 @@ const User = require('./User');
 const UserSession = require('./UserSession');
 const AuditLog = require('./AuditLog');
 const AppSetting = require('./AppSetting');
+const Otp = require('./Otp');
 const defineRelationships = require('./relationships');
 
 /**
@@ -19,4 +20,5 @@ module.exports = {
   UserSession,
   AuditLog,
   AppSetting,
+  Otp,
 };

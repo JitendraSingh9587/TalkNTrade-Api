@@ -6,10 +6,12 @@ const healthRoutes = require('./healthRoutes');
 const userRoutes = require('./userRoutes');
 const settingsRoutes = require('./settingsRoutes');
 const authRoutes = require('./authRoutes');
+const otpRoutes = require('./otpRoutes');
 
 // Mount routes
 router.use('/', healthRoutes);
 router.use('/v1/auth', authRoutes);
+router.use('/v1/otp', otpRoutes);
 router.use('/v1/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), userRoutes);
 router.use('/v1/settings', authenticate, authorize('SUPER_ADMIN'), settingsRoutes);
 

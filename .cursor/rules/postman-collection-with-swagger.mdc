@@ -1,0 +1,54 @@
+---
+description: Create/update Postman collection alongside Swagger when documenting APIs
+alwaysApply: true
+---
+
+# Postman Collection Alongside Swagger
+
+When adding or changing routes in `src/routes/`, maintain **both** Swagger (`@openapi` JSDoc) and a **Postman collection** so the API can be exercised from Postman.
+
+## Location and format
+
+- **File**: `postman/Backend-API.postman_collection.json` (Postman Collection v2.1).
+- **Environment** (optional): `postman/Backend-API.postman_environment.json` for `baseUrl`, `port`, etc.
+
+## Collection structure
+
+- **Info**: Name and description matching the API (e.g. "Backend API", version from Swagger).
+- **Variables**: At collection level define `baseUrl` (e.g. `http://localhost:3000` or `{{baseUrl}}` from environment).
+- **Folders**: One folder per Swagger tag (e.g. `Users`, `Auth`, `Health`). Folder name = tag name.
+- **Requests**: One request per endpoint, under the folder that matches the route’s Swagger tag.
+
+## Each request must have
+
+- **Name**: Short, clear (e.g. "Create user", "List users").
+- **Method**: Same as route (GET, POST, PUT, PATCH, DELETE).
+- **URL**: `{{baseUrl}}/api/v1/...` — path must match the route (and Swagger path without the base).
+- **Path params**: Use Postman path variables (e.g. `{{baseUrl}}/api/v1/users/{{id}}`) and define variables in the request or collection.
+- **Query params**: Add when the route has query parameters (same names as in Swagger).
+- **Body**: For POST/PUT/PATCH with JSON body, set Body type to raw JSON and include a minimal valid example matching the route’s request body schema (required fields only is fine).
+
+## Keeping in sync
+
+- New route → add `@openapi` block and add the corresponding request to the Postman collection in the right folder.
+- Changed path/method/body → update both the `@openapi` block and the Postman request.
+- New tag → new folder in the collection; re-use tag names as folder names.
+
+## Minimal request example (POST)
+
+```json
+{
+  "name": "Create user",
+  "request": {
+    "method": "POST",
+    "header": [{ "key": "Content-Type", "value": "application/json" }],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"name\": \"Acme Corp\",\n  \"status\": \"active\"\n}"
+    },
+    "url": "{{baseUrl}}/api/v1/users"
+  }
+}
+```
+
+Use the same base path as in Swagger (`process.env.API_BASE_PATH || "/api/v1"`) in the Postman URL (e.g. `{{baseUrl}}/api/v1/...`). No separate doc file is needed; the collection is the Postman counterpart to Swagger.

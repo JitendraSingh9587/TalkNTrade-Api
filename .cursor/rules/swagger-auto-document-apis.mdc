@@ -1,0 +1,98 @@
+---
+description: Document every API with OpenAPI JSDoc so Swagger auto-generates docs
+alwaysApply: true
+---
+
+# Swagger: Document Every API
+
+Every route in `src/routes/` must have an `@openapi` JSDoc block directly above it. swagger-jsdoc reads these files and builds the spec; docs are served at `{API_BASE_PATH}/docs` (e.g. `/api/v1/docs`).
+
+## Required for each endpoint
+
+- **Path**: Use the full path including base (e.g. `/api/v1/users`, not `/users`). Base is `process.env.API_BASE_PATH || "/api/v1"`.
+- **Method**: get, post, put, patch, delete, etc.
+- **summary**: Short one-line description.
+- **tags**: Array of tags for grouping (e.g. `[Users]`, `[Health]`).
+- **responses**: At least success (200/201) and relevant errors (400, 401, 404, 500). Include `content` and `schema` for JSON responses.
+
+## Template (GET)
+
+```javascript
+/**
+ * @openapi
+ * /api/v1/resource:
+ *   get:
+ *     summary: Short description
+ *     tags: [ResourceName]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 key:
+ *                   type: string
+ */
+router.get("/resource", handler);
+```
+
+## Template (POST with body)
+
+```javascript
+/**
+ * @openapi
+ * /api/v1/resource:
+ *   post:
+ *     summary: Create resource
+ *     tags: [ResourceName]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string }
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Validation error
+ */
+router.post("/resource", handler);
+```
+
+## Template (path/query params)
+
+```javascript
+/**
+ * @openapi
+ * /api/v1/resource/{id}:
+ *   get:
+ *     summary: Get by ID
+ *     tags: [ResourceName]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: fields
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Success
+ *       404:
+ *         description: Not found
+ */
+router.get("/resource/:id", handler);
+```
+
+When adding or changing a route, add or update the `@openapi` block so the API appears correctly in Swagger UI. No separate doc file is needed.
