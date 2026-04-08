@@ -1,5 +1,9 @@
 const otpService = require("../services/otpService");
 const { sendSuccess, sendError } = require("../utils/response");
+const {
+  normalizeUserMobile,
+  getMobileValidationErrors,
+} = require("../validators/mobileValidator");
 
 /**
  * Public: request REGISTER OTP (email channel only for web signup).
@@ -51,6 +55,11 @@ const verifyRegisterOtp = async (req, res) => {
       );
     }
 
+    const mobileErrors = getMobileValidationErrors(mobile, { required: true });
+    if (mobileErrors.length > 0) {
+      return sendError(res, mobileErrors.join(", "), 400);
+    }
+
     const result = await otpService.verifyOTP({
       email: String(email).trim().toLowerCase(),
       otp: String(otp).trim(),
@@ -58,7 +67,7 @@ const verifyRegisterOtp = async (req, res) => {
       channel: "EMAIL",
       userData: {
         name: String(name).trim(),
-        mobile: String(mobile).trim(),
+        mobile: normalizeUserMobile(mobile),
         password,
         role: "ADMIN",
       },

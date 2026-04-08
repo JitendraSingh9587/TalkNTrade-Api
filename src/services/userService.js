@@ -2,6 +2,7 @@ const { User, Organisation } = require("../models");
 const { Op } = require("sequelize");
 const { hashPassword } = require("../shared/utils/password");
 const organisationService = require("./organisationService");
+const { normalizeUserMobile } = require("../validators/mobileValidator");
 
 const organisationInclude = {
   model: Organisation,
@@ -203,8 +204,9 @@ const createUser = async (userData, actor = {}) => {
     throw error;
   }
 
+  const mobileNormalized = normalizeUserMobile(userData.mobile);
   const existingUserByMobile = await User.findOne({
-    where: { mobile: userData.mobile },
+    where: { mobile: mobileNormalized },
   });
 
   if (existingUserByMobile) {
@@ -220,6 +222,7 @@ const createUser = async (userData, actor = {}) => {
   payload.is_email_verified = true;
   payload.is_mobile_verified = true;
   payload.organisation_id = finalOrgId;
+  payload.mobile = mobileNormalized;
 
   const user = await User.create(payload);
 
@@ -308,6 +311,13 @@ const updateUser = async (id, updateData, currentUserId = null, actor = {}) => {
       error.statusCode = 409;
       throw error;
     }
+  }
+
+  if (
+    updateData.mobile !== undefined &&
+    String(updateData.mobile).trim() !== ""
+  ) {
+    updateData.mobile = normalizeUserMobile(updateData.mobile);
   }
 
   if (updateData.mobile && updateData.mobile !== user.mobile) {
