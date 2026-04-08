@@ -2,6 +2,7 @@ const User = require("./User");
 const UserSession = require("./UserSession");
 const Otp = require("./Otp");
 const Organisation = require("./Organisation");
+const PasswordResetToken = require("./PasswordResetToken");
 
 /**
  * Define model relationships
@@ -37,6 +38,16 @@ const defineRelationships = () => {
 
   // OTP belongs to User
   Otp.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
+  });
+
+  User.hasMany(PasswordResetToken, {
+    foreignKey: "user_id",
+    as: "passwordResetTokens",
+  });
+
+  PasswordResetToken.belongsTo(User, {
     foreignKey: "user_id",
     as: "user",
   });

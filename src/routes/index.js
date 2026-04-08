@@ -10,6 +10,7 @@ const authRoutes = require("./authRoutes");
 const otpRoutes = require("./otpRoutes");
 const organisationRoutes = require("./organisationRoutes");
 const registerController = require("../controllers/registerController");
+const passwordResetController = require("../controllers/passwordResetController");
 const { getMyOrganisation } = require("../controllers/organisationController");
 const { login, logout } = require("../controllers/authController");
 
@@ -35,6 +36,15 @@ router.post(
 router.post(
   "/v1/auth/register/verify",
   asyncHandler(registerController.verifyRegisterOtp),
+);
+
+router.post(
+  "/v1/auth/forgot-password",
+  asyncHandler(passwordResetController.forgotPassword),
+);
+router.post(
+  "/v1/auth/reset-password",
+  asyncHandler(passwordResetController.resetPassword),
 );
 
 // --- All routes below require a valid access token (cookie or Bearer) ---
