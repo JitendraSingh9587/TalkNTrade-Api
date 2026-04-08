@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const { verifyAccessToken, hashToken } = require("../shared/utils/jwt");
-const { User, UserSession } = require("../models");
+const { User, UserSession, Organisation } = require("../models");
 
 /**
  * Authentication Middleware
@@ -45,7 +45,15 @@ const authenticate = async (req, res, next) => {
     }
 
     // Get user from database to ensure user still exists and is active
-    const user = await User.findByPk(decoded.id);
+    const user = await User.findByPk(decoded.id, {
+      include: [
+        {
+          model: Organisation,
+          as: "organisation",
+          attributes: ["id", "name", "status"],
+        },
+      ],
+    });
 
     if (!user) {
       const error = new Error("User not found");
@@ -57,6 +65,22 @@ const authenticate = async (req, res, next) => {
       const error = new Error("User account is disabled");
       error.statusCode = 403;
       return next(error);
+    }
+
+    if (user.role !== "SUPER_ADMIN") {
+      if (!user.organisation_id) {
+        const error = new Error(
+          "Your account must be linked to an organisation. Contact support.",
+        );
+        error.statusCode = 403;
+        return next(error);
+      }
+      const org = user.organisation;
+      if (!org || org.status !== "ACTIVE") {
+        const error = new Error("Your organisation is not active");
+        error.statusCode = 403;
+        return next(error);
+      }
     }
 
     // Require a matching active session (JWT alone is not enough — revokes stale tokens)
@@ -80,12 +104,16 @@ const authenticate = async (req, res, next) => {
       return next(error);
     }
 
-    // Attach user info to request
+    const org = user.organisation;
     req.user = {
       id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
+      organisation_id: user.organisation_id,
+      organisation: org
+        ? { id: org.id, name: org.name, status: org.status }
+        : null,
     };
 
     req.token = token;

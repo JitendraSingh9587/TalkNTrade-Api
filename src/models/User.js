@@ -1,12 +1,12 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database");
 
 /**
  * User Model
  * Represents users in the system with roles and authentication
  */
 const User = sequelize.define(
-  'User',
+  "User",
   {
     id: {
       type: DataTypes.BIGINT.UNSIGNED,
@@ -37,8 +37,17 @@ const User = sequelize.define(
     },
 
     role: {
-      type: DataTypes.ENUM('SUPER_ADMIN', 'ADMIN', 'SUPERVISOR', 'USER'),
+      type: DataTypes.ENUM("SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"),
       allowNull: false,
+    },
+
+    organisation_id: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+      references: {
+        model: "organisations",
+        key: "id",
+      },
     },
 
     is_disabled: {
@@ -72,18 +81,19 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: 'users',
+    tableName: "users",
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-    charset: 'utf8mb4',
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    charset: "utf8mb4",
     indexes: [
-      { fields: ['role'] },
-      { fields: ['is_disabled'] },
-      { fields: ['is_mobile_verified'] },
-      { fields: ['is_email_verified'] },
+      { fields: ["role"] },
+      { fields: ["organisation_id"] },
+      { fields: ["is_disabled"] },
+      { fields: ["is_mobile_verified"] },
+      { fields: ["is_email_verified"] },
     ],
-  }
+  },
 );
 
 module.exports = User;

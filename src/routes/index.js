@@ -8,6 +8,7 @@ const userRoutes = require("./userRoutes");
 const settingsRoutes = require("./settingsRoutes");
 const authRoutes = require("./authRoutes");
 const otpRoutes = require("./otpRoutes");
+const organisationRoutes = require("./organisationRoutes");
 const { login, logout } = require("../controllers/authController");
 
 // --- Public (no access token required) ---
@@ -32,5 +33,6 @@ router.use("/v1/auth", authRoutes);
 router.use("/v1/otp", otpRoutes);
 router.use("/v1/users", authorize("SUPER_ADMIN", "ADMIN"), userRoutes);
 router.use("/v1/settings", authorize("SUPER_ADMIN"), settingsRoutes);
+router.use("/v1/organisations", authorize("SUPER_ADMIN"), organisationRoutes);
 
 module.exports = router;
