@@ -1,11 +1,21 @@
-const { User } = require('../models');
-const { Op } = require('sequelize');
-const { hashPassword } = require('../shared/utils/password');
+const { User } = require("../models");
+const { Op } = require("sequelize");
+const { hashPassword } = require("../shared/utils/password");
 
 /**
  * User Service
  * Contains all business logic for user operations
  */
+
+function assertSuperAdminOnlyForTarget(actorRole, targetRole, actionLabel) {
+  if (targetRole === "SUPER_ADMIN" && actorRole !== "SUPER_ADMIN") {
+    const error = new Error(
+      `Only a super admin can ${actionLabel} a super admin account`,
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+}
 
 /**
  * Get all users with optional filters
@@ -26,7 +36,7 @@ const getAllUsers = async (filters = {}, pagination = {}) => {
   }
 
   if (is_disabled !== undefined) {
-    where.is_disabled = is_disabled === 'true' || is_disabled === true;
+    where.is_disabled = is_disabled === "true" || is_disabled === true;
   }
 
   if (search) {
@@ -41,8 +51,8 @@ const getAllUsers = async (filters = {}, pagination = {}) => {
     where,
     limit,
     offset,
-    order: [['created_at', 'DESC']],
-    attributes: { exclude: ['password'] }, // Exclude password from results
+    order: [["created_at", "DESC"]],
+    attributes: { exclude: ["password"] }, // Exclude password from results
   });
 
   return {
@@ -63,11 +73,11 @@ const getAllUsers = async (filters = {}, pagination = {}) => {
  */
 const getUserById = async (id) => {
   const user = await User.findByPk(id, {
-    attributes: { exclude: ['password'] },
+    attributes: { exclude: ["password"] },
   });
 
   if (!user) {
-    const error = new Error('User not found');
+    const error = new Error("User not found");
     error.statusCode = 404;
     throw error;
   }
@@ -80,14 +90,22 @@ const getUserById = async (id) => {
  * @param {Object} userData - User data
  * @returns {Promise<Object>} Created user
  */
-const createUser = async (userData) => {
+const createUser = async (userData, actorRole = null) => {
+  if (actorRole === "ADMIN" && userData.role === "SUPER_ADMIN") {
+    const error = new Error(
+      "Only a super admin can create super admin accounts",
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+
   // Check if email already exists
   const existingUserByEmail = await User.findOne({
     where: { email: userData.email },
   });
 
   if (existingUserByEmail) {
-    const error = new Error('Email already exists');
+    const error = new Error("Email already exists");
     error.statusCode = 409;
     throw error;
   }
@@ -98,7 +116,7 @@ const createUser = async (userData) => {
   });
 
   if (existingUserByMobile) {
-    const error = new Error('Mobile number already exists');
+    const error = new Error("Mobile number already exists");
     error.statusCode = 409;
     throw error;
   }
@@ -113,11 +131,11 @@ const createUser = async (userData) => {
   userData.is_mobile_verified = true;
 
   const user = await User.create(userData);
-  
+
   // Return user without password
   const userJson = user.toJSON();
   delete userJson.password;
-  
+
   return userJson;
 };
 
@@ -128,24 +146,43 @@ const createUser = async (userData) => {
  * @param {number} currentUserId - ID of user making the request (optional)
  * @returns {Promise<Object>} Updated user
  */
-const updateUser = async (id, updateData, currentUserId = null) => {
+const updateUser = async (
+  id,
+  updateData,
+  currentUserId = null,
+  actorRole = null,
+) => {
   const user = await User.findByPk(id);
 
   if (!user) {
-    const error = new Error('User not found');
+    const error = new Error("User not found");
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (actorRole === "ADMIN" && user.role === "SUPER_ADMIN") {
+    const error = new Error("Admins cannot modify super admin accounts");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (actorRole === "ADMIN" && updateData.role === "SUPER_ADMIN") {
+    const error = new Error(
+      "Only a super admin can assign the super admin role",
+    );
+    error.statusCode = 403;
     throw error;
   }
 
   // Prevent SUPER_ADMIN from changing their own role
   if (
-    user.role === 'SUPER_ADMIN' &&
+    user.role === "SUPER_ADMIN" &&
     currentUserId &&
     parseInt(id) === parseInt(currentUserId) &&
     updateData.role &&
     updateData.role !== user.role
   ) {
-    const error = new Error('Super admin cannot change their own role');
+    const error = new Error("Super admin cannot change their own role");
     error.statusCode = 403;
     throw error;
   }
@@ -157,7 +194,7 @@ const updateUser = async (id, updateData, currentUserId = null) => {
     });
 
     if (existingUser) {
-      const error = new Error('Email already exists');
+      const error = new Error("Email already exists");
       error.statusCode = 409;
       throw error;
     }
@@ -170,7 +207,7 @@ const updateUser = async (id, updateData, currentUserId = null) => {
     });
 
     if (existingUser) {
-      const error = new Error('Mobile number already exists');
+      const error = new Error("Mobile number already exists");
       error.statusCode = 409;
       throw error;
     }
@@ -182,11 +219,11 @@ const updateUser = async (id, updateData, currentUserId = null) => {
   }
 
   await user.update(updateData);
-  
+
   // Return user without password
   const userJson = user.toJSON();
   delete userJson.password;
-  
+
   return userJson;
 };
 
@@ -196,17 +233,19 @@ const updateUser = async (id, updateData, currentUserId = null) => {
  * @param {number} disabledBy - ID of user performing the disable action
  * @returns {Promise<Object>} Disabled user
  */
-const disableUser = async (id, disabledBy = null) => {
+const disableUser = async (id, disabledBy = null, actorRole = null) => {
   const user = await User.findByPk(id);
 
   if (!user) {
-    const error = new Error('User not found');
+    const error = new Error("User not found");
     error.statusCode = 404;
     throw error;
   }
 
+  assertSuperAdminOnlyForTarget(actorRole, user.role, "disable");
+
   if (user.is_disabled) {
-    const error = new Error('User is already disabled');
+    const error = new Error("User is already disabled");
     error.statusCode = 400;
     throw error;
   }
@@ -220,7 +259,7 @@ const disableUser = async (id, disabledBy = null) => {
   // Return user without password
   const userJson = user.toJSON();
   delete userJson.password;
-  
+
   return userJson;
 };
 
@@ -229,17 +268,19 @@ const disableUser = async (id, disabledBy = null) => {
  * @param {number} id - User ID
  * @returns {Promise<Object>} Enabled user
  */
-const enableUser = async (id) => {
+const enableUser = async (id, actorRole = null) => {
   const user = await User.findByPk(id);
 
   if (!user) {
-    const error = new Error('User not found');
+    const error = new Error("User not found");
     error.statusCode = 404;
     throw error;
   }
 
+  assertSuperAdminOnlyForTarget(actorRole, user.role, "enable");
+
   if (!user.is_disabled) {
-    const error = new Error('User is already enabled');
+    const error = new Error("User is already enabled");
     error.statusCode = 400;
     throw error;
   }
@@ -253,7 +294,7 @@ const enableUser = async (id) => {
   // Return user without password
   const userJson = user.toJSON();
   delete userJson.password;
-  
+
   return userJson;
 };
 

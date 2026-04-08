@@ -1,6 +1,9 @@
-const userService = require('../services/userService');
-const { validateCreateUser, validateUpdateUser } = require('../validators/userValidator');
-const { sendSuccess, sendError } = require('../utils/response');
+const userService = require("../services/userService");
+const {
+  validateCreateUser,
+  validateUpdateUser,
+} = require("../validators/userValidator");
+const { sendSuccess, sendError } = require("../utils/response");
 
 /**
  * User Controller
@@ -26,7 +29,7 @@ const getAllUsers = async (req, res) => {
     };
 
     const result = await userService.getAllUsers(filters, pagination);
-    sendSuccess(res, result, 'Users retrieved successfully');
+    sendSuccess(res, result, "Users retrieved successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -41,7 +44,7 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await userService.getUserById(id);
-    sendSuccess(res, user, 'User retrieved successfully');
+    sendSuccess(res, user, "User retrieved successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -57,11 +60,11 @@ const createUser = async (req, res) => {
     // Validate request data
     const validation = validateCreateUser(req.body);
     if (!validation.isValid) {
-      return sendError(res, validation.errors.join(', '), 400);
+      return sendError(res, validation.errors.join(", "), 400);
     }
 
-    const user = await userService.createUser(req.body);
-    sendSuccess(res, user, 'User created successfully', 201);
+    const user = await userService.createUser(req.body, req.user?.role ?? null);
+    sendSuccess(res, user, "User created successfully", 201);
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -77,16 +80,21 @@ const updateUser = async (req, res) => {
     // Validate request data
     const validation = validateUpdateUser(req.body);
     if (!validation.isValid) {
-      return sendError(res, validation.errors.join(', '), 400);
+      return sendError(res, validation.errors.join(", "), 400);
     }
 
     const { id } = req.params;
     // Get current user ID from authenticated user (req.user.id) or from request body
     // In production, this should come from authentication middleware
     const currentUserId = req.body.current_user_id || req.user?.id || null;
-    
-    const user = await userService.updateUser(id, req.body, currentUserId);
-    sendSuccess(res, user, 'User updated successfully');
+
+    const user = await userService.updateUser(
+      id,
+      req.body,
+      currentUserId,
+      req.user?.role ?? null,
+    );
+    sendSuccess(res, user, "User updated successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -102,8 +110,12 @@ const disableUser = async (req, res) => {
     const { id } = req.params;
     // Get disabled_by from authenticated user (req.user.id) or from request body
     const disabledBy = req.body.disabled_by || req.user?.id || null;
-    const user = await userService.disableUser(id, disabledBy);
-    sendSuccess(res, user, 'User disabled successfully');
+    const user = await userService.disableUser(
+      id,
+      disabledBy,
+      req.user?.role ?? null,
+    );
+    sendSuccess(res, user, "User disabled successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -117,8 +129,8 @@ const disableUser = async (req, res) => {
 const enableUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await userService.enableUser(id);
-    sendSuccess(res, user, 'User enabled successfully');
+    const user = await userService.enableUser(id, req.user?.role ?? null);
+    sendSuccess(res, user, "User enabled successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
