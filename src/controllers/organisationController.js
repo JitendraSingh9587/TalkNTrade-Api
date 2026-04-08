@@ -34,7 +34,49 @@ const createOrganisation = async (req, res) => {
   }
 };
 
+const getOrganisationById = async (req, res) => {
+  try {
+    const org = await organisationService.getOrganisationById(req.params.id);
+    sendSuccess(res, org, "Organisation retrieved successfully");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+const updateOrganisation = async (req, res) => {
+  try {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return sendError(res, "No fields to update", 400);
+    }
+    const validation = validateOrganisationPayload(req.body, {
+      partial: true,
+    });
+    if (!validation.isValid) {
+      return sendError(res, validation.errors.join(", "), 400);
+    }
+    const org = await organisationService.updateOrganisation(
+      req.params.id,
+      req.body,
+    );
+    sendSuccess(res, org, "Organisation updated successfully");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+const deleteOrganisation = async (req, res) => {
+  try {
+    const result = await organisationService.deleteOrganisation(req.params.id);
+    sendSuccess(res, result, "Organisation deleted successfully");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   listOrganisations,
   createOrganisation,
+  getOrganisationById,
+  updateOrganisation,
+  deleteOrganisation,
 };

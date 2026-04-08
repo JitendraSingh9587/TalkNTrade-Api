@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Organisation } = require("../models");
+const { Organisation, User } = require("../models");
 
 /**
  * @param {number|string} id
@@ -74,8 +74,67 @@ const createOrganisation = async (payload) => {
   return row;
 };
 
+const getOrganisationById = async (id) => {
+  const org = await Organisation.findByPk(id);
+  if (!org) {
+    const error = new Error("Organisation not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return org;
+};
+
+const updateOrganisation = async (id, payload) => {
+  const org = await getOrganisationById(id);
+  const allowed = [
+    "name",
+    "type",
+    "address",
+    "phone",
+    "email",
+    "website",
+    "logo_url",
+    "banner_url",
+    "description",
+    "status",
+  ];
+  const updates = {};
+  for (const key of allowed) {
+    if (payload[key] !== undefined) {
+      updates[key] = payload[key];
+    }
+  }
+  if (updates.name !== undefined) {
+    updates.name = String(updates.name).trim();
+  }
+  if (Object.keys(updates).length === 0) {
+    return org;
+  }
+  await org.update(updates);
+  return org.reload();
+};
+
+const deleteOrganisation = async (id) => {
+  const org = await getOrganisationById(id);
+  const userCount = await User.count({
+    where: { organisation_id: id },
+  });
+  if (userCount > 0) {
+    const error = new Error(
+      `Cannot delete organisation: ${userCount} user(s) are still assigned. Remove or reassign users first.`,
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+  await org.destroy();
+  return { deleted: true, id: parseInt(id, 10) };
+};
+
 module.exports = {
   listOrganisations,
   createOrganisation,
+  getOrganisationById,
+  updateOrganisation,
+  deleteOrganisation,
   requireActiveOrganisation,
 };
