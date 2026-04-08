@@ -52,6 +52,9 @@ tmp/
 temp/
 *.tmp
 
+# Uploaded media (local storage)
+uploads/
+
 # Testing
 coverage/
 .nyc_output/

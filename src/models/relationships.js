@@ -3,6 +3,7 @@ const UserSession = require("./UserSession");
 const Otp = require("./Otp");
 const Organisation = require("./Organisation");
 const PasswordResetToken = require("./PasswordResetToken");
+const Media = require("./Media");
 
 /**
  * Define model relationships
@@ -50,6 +51,16 @@ const defineRelationships = () => {
   PasswordResetToken.belongsTo(User, {
     foreignKey: "user_id",
     as: "user",
+  });
+
+  Organisation.hasMany(Media, {
+    foreignKey: "organisation_id",
+    as: "media",
+  });
+
+  Media.belongsTo(Organisation, {
+    foreignKey: "organisation_id",
+    as: "organisation",
   });
 };
 
