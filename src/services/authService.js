@@ -61,17 +61,20 @@ const login = async (identifier, password, deviceInfo = {}) => {
   }
 
   if (user.role !== "SUPER_ADMIN") {
-    if (!user.organisation_id) {
-      const error = new Error(
-        "Your account must be linked to an organisation. Contact support.",
-      );
-      error.statusCode = 403;
-      throw error;
-    }
-    if (!user.organisation || user.organisation.status !== "ACTIVE") {
-      const error = new Error("Your organisation is not active");
-      error.statusCode = 403;
-      throw error;
+    const pendingOrgSetup = user.role === "ADMIN" && !user.organisation_id;
+    if (!pendingOrgSetup) {
+      if (!user.organisation_id) {
+        const error = new Error(
+          "Your account must be linked to an organisation. Contact support.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+      if (!user.organisation || user.organisation.status !== "ACTIVE") {
+        const error = new Error("Your organisation is not active");
+        error.statusCode = 403;
+        throw error;
+      }
     }
   }
 

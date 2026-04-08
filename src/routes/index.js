@@ -9,6 +9,8 @@ const settingsRoutes = require("./settingsRoutes");
 const authRoutes = require("./authRoutes");
 const otpRoutes = require("./otpRoutes");
 const organisationRoutes = require("./organisationRoutes");
+const registerController = require("../controllers/registerController");
+const { getMyOrganisation } = require("../controllers/organisationController");
 const { login, logout } = require("../controllers/authController");
 
 // --- Public (no access token required) ---
@@ -26,9 +28,19 @@ router.post("/v1/auth/login", asyncHandler(login));
 // Logout stays public so clients can clear sessions when the token is already expired
 router.post("/v1/auth/logout", asyncHandler(logout));
 
+router.post(
+  "/v1/auth/register/request-otp",
+  asyncHandler(registerController.requestRegisterOtp),
+);
+router.post(
+  "/v1/auth/register/verify",
+  asyncHandler(registerController.verifyRegisterOtp),
+);
+
 // --- All routes below require a valid access token (cookie or Bearer) ---
 router.use(authenticate);
 
+router.get("/v1/organisations/me", asyncHandler(getMyOrganisation));
 router.use("/v1/auth", authRoutes);
 router.use("/v1/otp", otpRoutes);
 router.use("/v1/users", authorize("SUPER_ADMIN", "ADMIN"), userRoutes);

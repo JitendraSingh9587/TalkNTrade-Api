@@ -73,10 +73,35 @@ const deleteOrganisation = async (req, res) => {
   }
 };
 
+/**
+ * Current user's organisation (super admin: no org).
+ */
+const getMyOrganisation = async (req, res) => {
+  try {
+    if (req.user.role === "SUPER_ADMIN") {
+      return sendSuccess(
+        res,
+        { organisation: null },
+        "Super admins are not linked to a single organisation",
+      );
+    }
+    if (!req.user.organisation_id) {
+      return sendError(res, "No organisation assigned yet", 404);
+    }
+    const org = await organisationService.getOrganisationById(
+      req.user.organisation_id,
+    );
+    sendSuccess(res, org, "Organisation retrieved successfully");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   listOrganisations,
   createOrganisation,
   getOrganisationById,
   updateOrganisation,
   deleteOrganisation,
+  getMyOrganisation,
 };

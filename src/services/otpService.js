@@ -336,54 +336,62 @@ const verifyOTP = async (verifyData) => {
     const hashedPassword = await hashPassword(userData.password);
 
     if (role === "ADMIN") {
-      if (!userData.organisation || typeof userData.organisation !== "object") {
-        const error = new Error(
-          "organisation is required when registering as ADMIN (name, type, address, phone, email, website, logo_url, banner_url, description, status)",
+      if (userData.organisation && typeof userData.organisation === "object") {
+        const orgValidation = validateOrganisationPayload(
+          userData.organisation,
+          { partial: false },
         );
-        error.statusCode = 400;
-        throw error;
-      }
-      const orgValidation = validateOrganisationPayload(userData.organisation, {
-        partial: false,
-      });
-      if (!orgValidation.isValid) {
-        const error = new Error(orgValidation.errors.join(", "));
-        error.statusCode = 400;
-        throw error;
-      }
+        if (!orgValidation.isValid) {
+          const error = new Error(orgValidation.errors.join(", "));
+          error.statusCode = 400;
+          throw error;
+        }
 
-      await sequelize.transaction(async (t) => {
-        const org = await Organisation.create(
-          {
-            name: String(userData.organisation.name).trim(),
-            type: userData.organisation.type || "COMPANY",
-            address: userData.organisation.address ?? null,
-            phone: userData.organisation.phone ?? null,
-            email: userData.organisation.email ?? null,
-            website: userData.organisation.website ?? null,
-            logo_url: userData.organisation.logo_url ?? null,
-            banner_url: userData.organisation.banner_url ?? null,
-            description: userData.organisation.description ?? null,
-            status: userData.organisation.status || "ACTIVE",
-          },
-          { transaction: t },
-        );
+        await sequelize.transaction(async (t) => {
+          const org = await Organisation.create(
+            {
+              name: String(userData.organisation.name).trim(),
+              type: userData.organisation.type || "COMPANY",
+              address: userData.organisation.address ?? null,
+              phone: userData.organisation.phone ?? null,
+              email: userData.organisation.email ?? null,
+              website: userData.organisation.website ?? null,
+              logo_url: userData.organisation.logo_url ?? null,
+              banner_url: userData.organisation.banner_url ?? null,
+              description: userData.organisation.description ?? null,
+              status: userData.organisation.status || "ACTIVE",
+            },
+            { transaction: t },
+          );
 
-        user = await User.create(
-          {
-            name: userData.name,
-            email,
-            mobile: userData.mobile,
-            password: hashedPassword,
-            role: "ADMIN",
-            organisation_id: org.id,
-            is_email_verified: true,
-            is_mobile_verified: false,
-            is_disabled: false,
-          },
-          { transaction: t },
-        );
-      });
+          user = await User.create(
+            {
+              name: userData.name,
+              email,
+              mobile: userData.mobile,
+              password: hashedPassword,
+              role: "ADMIN",
+              organisation_id: org.id,
+              is_email_verified: true,
+              is_mobile_verified: false,
+              is_disabled: false,
+            },
+            { transaction: t },
+          );
+        });
+      } else {
+        user = await User.create({
+          name: userData.name,
+          email,
+          mobile: userData.mobile,
+          password: hashedPassword,
+          role: "ADMIN",
+          organisation_id: null,
+          is_email_verified: true,
+          is_mobile_verified: false,
+          is_disabled: false,
+        });
+      }
     } else {
       const oid =
         userData.organisation_id !== undefined &&

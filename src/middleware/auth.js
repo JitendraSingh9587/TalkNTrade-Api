@@ -67,7 +67,22 @@ const authenticate = async (req, res, next) => {
       return next(error);
     }
 
-    if (user.role !== "SUPER_ADMIN") {
+    const pathOnly = req.originalUrl.split("?")[0];
+    const isPendingOrgAdmin = user.role === "ADMIN" && !user.organisation_id;
+
+    if (isPendingOrgAdmin) {
+      const allowedPending =
+        (req.method === "GET" && pathOnly === "/api/v1/auth/verify") ||
+        (req.method === "POST" &&
+          pathOnly === "/api/v1/auth/complete-organisation");
+      if (!allowedPending) {
+        const error = new Error(
+          "Complete your organisation setup to continue.",
+        );
+        error.statusCode = 403;
+        return next(error);
+      }
+    } else if (user.role !== "SUPER_ADMIN") {
       if (!user.organisation_id) {
         const error = new Error(
           "Your account must be linked to an organisation. Contact support.",

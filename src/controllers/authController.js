@@ -1,5 +1,10 @@
 const authService = require("../services/authService");
+const organisationService = require("../services/organisationService");
+const { User, Organisation } = require("../models");
 const { validateLogin } = require("../validators/authValidator");
+const {
+  validateOrganisationPayload,
+} = require("../validators/organisationValidator");
 const { sendSuccess, sendError } = require("../utils/response");
 const {
   expiryStringToSeconds,
@@ -132,8 +137,53 @@ const verifyToken = async (req, res) => {
   sendSuccess(res, { valid: true, user: req.user }, "Token valid");
 };
 
+/**
+ * ADMIN without organisation: create org and link account (after email signup).
+ */
+const completeOrganisation = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN" || req.user.organisation_id) {
+      return sendError(
+        res,
+        "Only admins without an organisation can complete this step",
+        400,
+      );
+    }
+    const validation = validateOrganisationPayload(req.body, {
+      partial: false,
+    });
+    if (!validation.isValid) {
+      return sendError(res, validation.errors.join(", "), 400);
+    }
+    const org = await organisationService.createOrganisation(req.body);
+    await User.update(
+      { organisation_id: org.id },
+      { where: { id: req.user.id } },
+    );
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Organisation,
+          as: "organisation",
+          attributes: ["id", "name", "status"],
+        },
+      ],
+    });
+    const userData = user.toJSON();
+    sendSuccess(
+      res,
+      { organisation: org, user: userData },
+      "Organisation created and linked to your account",
+    );
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   login,
   logout,
   verifyToken,
+  completeOrganisation,
 };
