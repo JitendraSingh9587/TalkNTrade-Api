@@ -1,6 +1,6 @@
-const { User, UserSession } = require('../models');
-const { Op } = require('sequelize');
-const { comparePassword } = require('../shared/utils/password');
+const { User, UserSession, Organisation } = require("../models");
+const { Op } = require("sequelize");
+const { comparePassword } = require("../shared/utils/password");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -9,8 +9,8 @@ const {
   expiryStringToSeconds,
   getTokenExpirationFromString,
   verifyAccessToken,
-} = require('../shared/utils/jwt');
-const settingsCache = require('../shared/services/settingsCache');
+} = require("../shared/utils/jwt");
+const settingsCache = require("../shared/services/settingsCache");
 
 /**
  * Auth Service
@@ -28,22 +28,26 @@ const login = async (identifier, password, deviceInfo = {}) => {
   // Find user by email or mobile
   const user = await User.findOne({
     where: {
-      [Op.or]: [
-        { email: identifier },
-        { mobile: identifier },
-      ],
+      [Op.or]: [{ email: identifier }, { mobile: identifier }],
     },
+    include: [
+      {
+        model: Organisation,
+        as: "organisation",
+        attributes: ["id", "name", "status"],
+      },
+    ],
   });
 
   if (!user) {
-    const error = new Error('Invalid email/mobile or password');
+    const error = new Error("Invalid email/mobile or password");
     error.statusCode = 401;
     throw error;
   }
 
   // Check if user is disabled
   if (user.is_disabled) {
-    const error = new Error('User account is disabled');
+    const error = new Error("User account is disabled");
     error.statusCode = 403;
     throw error;
   }
@@ -51,14 +55,32 @@ const login = async (identifier, password, deviceInfo = {}) => {
   // Verify password
   const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
-    const error = new Error('Invalid email/mobile or password');
+    const error = new Error("Invalid email/mobile or password");
     error.statusCode = 401;
     throw error;
   }
 
+  if (user.role !== "SUPER_ADMIN") {
+    const pendingOrgSetup = user.role === "ADMIN" && !user.organisation_id;
+    if (!pendingOrgSetup) {
+      if (!user.organisation_id) {
+        const error = new Error(
+          "Your account must be linked to an organisation. Contact support.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+      if (!user.organisation || user.organisation.status !== "ACTIVE") {
+        const error = new Error("Your organisation is not active");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+  }
+
   // Get token expiry from settings
-  const accessTokenExpiry = getTokenExpiry('ACCESS_TOKEN_EXPIRY', '7d');
-  const refreshTokenExpiry = getTokenExpiry('REFRESH_TOKEN_EXPIRY', '7d');
+  const accessTokenExpiry = getTokenExpiry("ACCESS_TOKEN_EXPIRY", "7d");
+  const refreshTokenExpiry = getTokenExpiry("REFRESH_TOKEN_EXPIRY", "7d");
 
   // Generate tokens
   const tokenPayload = {
@@ -76,10 +98,14 @@ const login = async (identifier, password, deviceInfo = {}) => {
 
   // Calculate expiration dates from expiry strings
   const accessTokenExpiresAt = getTokenExpirationFromString(accessTokenExpiry);
-  const refreshTokenExpiresAt = getTokenExpirationFromString(refreshTokenExpiry);
+  const refreshTokenExpiresAt =
+    getTokenExpirationFromString(refreshTokenExpiry);
 
   // Get maximum login sessions from settings (default: 2)
-  const maxSessions = parseInt(settingsCache.getSetting('MAX_LOGIN_SESSIONS', '2'), 10);
+  const maxSessions = parseInt(
+    settingsCache.getSetting("MAX_LOGIN_SESSIONS", "2"),
+    10,
+  );
 
   // Check current active sessions for this user
   const activeSessions = await UserSession.findAll({
@@ -90,17 +116,17 @@ const login = async (identifier, password, deviceInfo = {}) => {
         [Op.gt]: new Date(), // Only count non-expired sessions
       },
     },
-    order: [['created_at', 'ASC']], // Oldest first
+    order: [["created_at", "ASC"]], // Oldest first
   });
 
   // If user has reached max sessions, delete oldest session(s)
   if (activeSessions.length >= maxSessions) {
     const sessionsToDelete = activeSessions.length - maxSessions + 1; // Delete enough to make room for new session
-    
+
     const sessionIdsToDelete = activeSessions
       .slice(0, sessionsToDelete)
-      .map(session => session.id);
-    
+      .map((session) => session.id);
+
     // Delete old sessions
     if (sessionIdsToDelete.length > 0) {
       await UserSession.destroy({
@@ -135,6 +161,13 @@ const login = async (identifier, password, deviceInfo = {}) => {
   // Return user data without password
   const userData = user.toJSON();
   delete userData.password;
+  if (userData.organisation) {
+    userData.organisation = {
+      id: userData.organisation.id,
+      name: userData.organisation.name,
+      status: userData.organisation.status,
+    };
+  }
 
   return {
     user: userData,
@@ -156,10 +189,10 @@ const logout = async (accessToken) => {
   try {
     // Verify token to get user info
     const decoded = verifyAccessToken(accessToken);
-    
+
     // Hash the token to find the session
     const accessTokenHash = hashToken(accessToken);
-    
+
     // Find and delete the session
     const deletedCount = await UserSession.destroy({
       where: {
@@ -168,27 +201,30 @@ const logout = async (accessToken) => {
         is_active: true,
       },
     });
-    
+
     if (deletedCount === 0) {
       // Session not found or already deleted - still return success
       // This handles cases where token is expired or session already removed
       return {
         success: true,
-        message: 'Logout successful',
+        message: "Logout successful",
       };
     }
-    
+
     return {
       success: true,
-      message: 'Logout successful',
+      message: "Logout successful",
     };
   } catch (error) {
     // If token is invalid or expired, still allow logout
     // This handles edge cases gracefully
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
       return {
         success: true,
-        message: 'Logout successful',
+        message: "Logout successful",
       };
     }
     throw error;

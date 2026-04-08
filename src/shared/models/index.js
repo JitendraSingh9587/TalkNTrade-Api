@@ -1,22 +1,24 @@
 /**
  * Shared models index
  * Re-exports models from src/models/ for backward compatibility
- * 
+ *
  * Note: All models are now in src/models/ directory
  */
 
 const {
   sequelize,
   User,
+  Organisation,
   UserSession,
   AuditLog,
   AppSetting,
-} = require('../../models');
+} = require("../../models");
 
 // Export sequelize instance and models
 module.exports = {
   sequelize,
   User,
+  Organisation,
   UserSession,
   AuditLog,
   AppSetting,

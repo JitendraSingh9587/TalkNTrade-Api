@@ -21,6 +21,7 @@ const getAllUsers = async (req, res) => {
       role: req.query.role,
       is_disabled: req.query.is_disabled,
       search: req.query.search,
+      organisation_id: req.query.organisation_id,
     };
 
     const pagination = {
@@ -28,7 +29,10 @@ const getAllUsers = async (req, res) => {
       limit: req.query.limit,
     };
 
-    const result = await userService.getAllUsers(filters, pagination);
+    const result = await userService.getAllUsers(filters, pagination, {
+      role: req.user.role,
+      organisation_id: req.user.organisation_id,
+    });
     sendSuccess(res, result, "Users retrieved successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -43,7 +47,10 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await userService.getUserById(id);
+    const user = await userService.getUserById(id, {
+      role: req.user.role,
+      organisation_id: req.user.organisation_id,
+    });
     sendSuccess(res, user, "User retrieved successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -63,7 +70,11 @@ const createUser = async (req, res) => {
       return sendError(res, validation.errors.join(", "), 400);
     }
 
-    const user = await userService.createUser(req.body, req.user?.role ?? null);
+    const user = await userService.createUser(req.body, {
+      role: req.user?.role ?? null,
+      id: req.user?.id ?? null,
+      organisation_id: req.user?.organisation_id ?? null,
+    });
     sendSuccess(res, user, "User created successfully", 201);
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -88,12 +99,10 @@ const updateUser = async (req, res) => {
     // In production, this should come from authentication middleware
     const currentUserId = req.body.current_user_id || req.user?.id || null;
 
-    const user = await userService.updateUser(
-      id,
-      req.body,
-      currentUserId,
-      req.user?.role ?? null,
-    );
+    const user = await userService.updateUser(id, req.body, currentUserId, {
+      role: req.user?.role ?? null,
+      organisation_id: req.user?.organisation_id ?? null,
+    });
     sendSuccess(res, user, "User updated successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -114,6 +123,7 @@ const disableUser = async (req, res) => {
       id,
       disabledBy,
       req.user?.role ?? null,
+      req.user?.organisation_id ?? null,
     );
     sendSuccess(res, user, "User disabled successfully");
   } catch (error) {
@@ -129,7 +139,11 @@ const disableUser = async (req, res) => {
 const enableUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await userService.enableUser(id, req.user?.role ?? null);
+    const user = await userService.enableUser(
+      id,
+      req.user?.role ?? null,
+      req.user?.organisation_id ?? null,
+    );
     sendSuccess(res, user, "User enabled successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);

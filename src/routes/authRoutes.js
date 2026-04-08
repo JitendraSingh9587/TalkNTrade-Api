@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const asyncHandler = require("../utils/asyncHandler");
-const { verifyToken } = require("../controllers/authController");
+const {
+  verifyToken,
+  completeOrganisation,
+} = require("../controllers/authController");
 
 /**
  * @swagger
@@ -25,5 +28,6 @@ const { verifyToken } = require("../controllers/authController");
  *         description: Missing, invalid, or expired token
  */
 router.get("/verify", asyncHandler(verifyToken));
+router.post("/complete-organisation", asyncHandler(completeOrganisation));
 
 module.exports = router;

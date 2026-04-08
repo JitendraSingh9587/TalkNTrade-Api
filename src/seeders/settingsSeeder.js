@@ -84,6 +84,20 @@ const settingsData = [
     description: 'Reject unauthorized SSL certificates (set to true in production)',
     is_active: true,
   },
+  {
+    key: 'WEB_APP_URL',
+    value: 'http://localhost:5173',
+    description:
+      'Public web app origin for password-reset links (no trailing slash), e.g. https://app.example.com',
+    is_active: true,
+  },
+  {
+    key: 'PASSWORD_RESET_TOKEN_EXPIRY_MINUTES',
+    value: '60',
+    description:
+      'Password reset link lifetime in minutes (min 5, max 1440)',
+    is_active: true,
+  },
 ];
 
 /**
