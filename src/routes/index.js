@@ -15,6 +15,9 @@ const { getMyOrganisation } = require("../controllers/organisationController");
 const { login, logout } = require("../controllers/authController");
 const mediaController = require("../controllers/mediaController");
 const mediaRoutes = require("./mediaRoutes");
+const brandRoutes = require("./brandRoutes");
+const brandModelRoutes = require("./brandModelRoutes");
+const productRoutes = require("./productRoutes");
 
 // --- Public (no access token required) ---
 router.use("/", healthRoutes);
@@ -63,6 +66,13 @@ router.use("/v1/otp", otpRoutes);
 router.use("/v1/users", authorize("SUPER_ADMIN", "ADMIN"), userRoutes);
 router.use("/v1/settings", authorize("SUPER_ADMIN"), settingsRoutes);
 router.use("/v1/organisations", authorize("SUPER_ADMIN"), organisationRoutes);
-router.use("/v1/media", authorize("SUPER_ADMIN", "ADMIN"), mediaRoutes);
+router.use(
+  "/v1/media",
+  authorize("SUPER_ADMIN", "ADMIN", "SUPERVISOR"),
+  mediaRoutes,
+);
+router.use("/v1/brands", brandRoutes);
+router.use("/v1/brand-models", brandModelRoutes);
+router.use("/v1/products", productRoutes);
 
 module.exports = router;

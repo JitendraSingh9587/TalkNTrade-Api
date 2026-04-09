@@ -132,9 +132,109 @@ const ensureMediaPublicTokenColumn = async () => {
   console.log("✅ Schema patch: added column media.public_token");
 };
 
+/**
+ * Sequelize sync alter may skip new columns on existing MySQL `products` table.
+ */
+const ensureProductWarrantyColumns = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [cols] = await sequelize.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+       AND COLUMN_NAME IN ('is_warranty_available', 'warranty_expires_at')`,
+  );
+  const have = new Set((cols || []).map((r) => r.COLUMN_NAME));
+
+  if (!have.has("is_warranty_available")) {
+    await sequelize.query(
+      "ALTER TABLE `products` ADD COLUMN `is_warranty_available` TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    console.log("✅ Schema patch: added column products.is_warranty_available");
+  }
+  if (!have.has("warranty_expires_at")) {
+    await sequelize.query(
+      "ALTER TABLE `products` ADD COLUMN `warranty_expires_at` DATE NULL",
+    );
+    console.log("✅ Schema patch: added column products.warranty_expires_at");
+  }
+};
+
+/** Sequelize sync alter may skip new columns on existing MySQL `products` table. */
+const ensureProductMrpColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'mrp'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `products` ADD COLUMN `mrp` DECIMAL(12,2) NULL",
+  );
+  console.log("✅ Schema patch: added column products.mrp");
+};
+
+const ensureBrandCatalogVerificationColumns = async () => {
+  const [brandTables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'brands'`,
+  );
+  if (Number(brandTables[0]?.c ?? 0) === 0) return;
+
+  const [bCols] = await sequelize.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'brands'
+       AND COLUMN_NAME IN ('is_verified', 'organisation_id')`,
+  );
+  const bHave = new Set((bCols || []).map((r) => r.COLUMN_NAME));
+  if (!bHave.has("is_verified")) {
+    await sequelize.query(
+      "ALTER TABLE `brands` ADD COLUMN `is_verified` TINYINT(1) NOT NULL DEFAULT 1",
+    );
+    console.log("✅ Schema patch: added column brands.is_verified");
+  }
+  if (!bHave.has("organisation_id")) {
+    await sequelize.query(
+      "ALTER TABLE `brands` ADD COLUMN `organisation_id` BIGINT UNSIGNED NULL",
+    );
+    console.log("✅ Schema patch: added column brands.organisation_id");
+  }
+
+  const [mCols] = await sequelize.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'brand_models'
+       AND COLUMN_NAME IN ('is_verified', 'organisation_id')`,
+  );
+  const mHave = new Set((mCols || []).map((r) => r.COLUMN_NAME));
+  if (!mHave.has("is_verified")) {
+    await sequelize.query(
+      "ALTER TABLE `brand_models` ADD COLUMN `is_verified` TINYINT(1) NOT NULL DEFAULT 1",
+    );
+    console.log("✅ Schema patch: added column brand_models.is_verified");
+  }
+  if (!mHave.has("organisation_id")) {
+    await sequelize.query(
+      "ALTER TABLE `brand_models` ADD COLUMN `organisation_id` BIGINT UNSIGNED NULL",
+    );
+    console.log("✅ Schema patch: added column brand_models.organisation_id");
+  }
+};
+
 module.exports = {
   sequelize,
   connectDB,
   syncDB,
   ensureMediaPublicTokenColumn,
+  ensureProductWarrantyColumns,
+  ensureProductMrpColumn,
+  ensureBrandCatalogVerificationColumns,
 };

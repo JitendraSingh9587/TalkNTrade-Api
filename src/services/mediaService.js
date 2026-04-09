@@ -73,7 +73,7 @@ function toPublicJson(mediaRow) {
 
 function assertActorCanAccessOrg(actor, organisationId) {
   if (actor.role === "SUPER_ADMIN") return;
-  if (actor.role === "ADMIN") {
+  if (actor.role === "ADMIN" || actor.role === "SUPERVISOR") {
     if (
       !actor.organisation_id ||
       parseInt(actor.organisation_id, 10) !== parseInt(organisationId, 10)
@@ -100,7 +100,7 @@ function resolveOrganisationIdForCreate(actor, body) {
     }
     return n;
   }
-  if (actor.role === "ADMIN") {
+  if (actor.role === "ADMIN" || actor.role === "SUPERVISOR") {
     if (!actor.organisation_id) {
       const err = new Error("Your account is not linked to an organisation");
       err.statusCode = 403;
@@ -197,7 +197,7 @@ async function listMedia(
   const offset = (p - 1) * l;
 
   const where = {};
-  if (actor.role === "ADMIN") {
+  if (actor.role === "ADMIN" || actor.role === "SUPERVISOR") {
     where.organisation_id = actor.organisation_id;
   } else if (actor.role === "SUPER_ADMIN" && filterOrg) {
     where.organisation_id = parseInt(filterOrg, 10);

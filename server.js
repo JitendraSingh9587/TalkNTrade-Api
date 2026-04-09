@@ -5,9 +5,12 @@ const {
   connectDB,
   syncDB,
   ensureMediaPublicTokenColumn,
+  ensureProductWarrantyColumns,
+  ensureProductMrpColumn,
+  ensureBrandCatalogVerificationColumns,
 } = require("./src/config/database");
 const { seedSettings } = require("./src/seeders/settingsSeeder");
-const { seedAdminUser } = require("./src/seeders/userSeeder");
+const { seedUsers } = require("./src/seeders/userSeeder");
 const settingsCache = require("./src/shared/services/settingsCache");
 
 // Import all models to register them with Sequelize
@@ -27,12 +30,15 @@ const startServer = async () => {
     const shouldAlter = process.env.DB_SYNC_ALTER !== "false";
     await syncDB(false, shouldAlter);
     await ensureMediaPublicTokenColumn();
+    await ensureProductWarrantyColumns();
+    await ensureProductMrpColumn();
+    await ensureBrandCatalogVerificationColumns();
 
     // Seed settings (JWT secrets, etc.)
     await seedSettings();
 
-    // Seed admin user
-    await seedAdminUser();
+    // Seed demo users (all roles; idempotent)
+    await seedUsers();
 
     // Load settings into cache
     await settingsCache.loadSettings();
