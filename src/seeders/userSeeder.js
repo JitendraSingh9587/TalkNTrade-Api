@@ -14,9 +14,9 @@ const DEFAULT_ORGANISATION_NAME = "Default Organisation";
 const SEED_USERS = [
   {
     name: "Super Admin",
-    email: "admin@talkntrade.com",
+    email: "superadmin@talkntrade.com",
     mobile: "9999999999",
-    password: "admin@talkntrade.com",
+    password: "superadmin@talkntrade.com",
     role: "SUPER_ADMIN",
     is_email_verified: true,
     is_mobile_verified: true,
