@@ -50,7 +50,7 @@ router.post(
 );
 
 router.get(
-  "/v1/media/public/:id",
+  "/v1/media/public/:token",
   asyncHandler(mediaController.servePublicMedia),
 );
 

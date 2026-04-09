@@ -88,15 +88,13 @@ const deleteMedia = async (req, res) => {
 };
 
 /**
- * Public: stream file by id (no auth).
+ * Public: stream file by opaque public_token (or legacy numeric media id).
  */
 const servePublicMedia = async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) {
-      return sendError(res, "Not found", 404);
-    }
-    const { media, absolutePath } = await mediaService.getPublicFilePayload(id);
+    const segment = req.params.token;
+    const { media, absolutePath } =
+      await mediaService.getPublicFilePayload(segment);
     res.setHeader("Content-Type", media.type || "application/octet-stream");
     res.setHeader(
       "Content-Disposition",

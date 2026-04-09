@@ -1,10 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { healthCheck } = require('../controllers/healthController');
+const { healthCheck } = require("../controllers/healthController");
 
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Health check endpoint
  *     tags: [Health]
@@ -26,6 +26,6 @@ const { healthCheck } = require('../controllers/healthController');
  *                   type: string
  *                   format: date-time
  */
-router.get('/health', healthCheck);
+router.get("/health", healthCheck);
 
 module.exports = router;

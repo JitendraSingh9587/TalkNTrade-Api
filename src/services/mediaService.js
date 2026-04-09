@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { Media, Organisation } = require("../models");
-const { Op } = require("sequelize");
 const settingsCache = require("../shared/services/settingsCache");
 const organisationService = require("./organisationService");
 const localMediaStorage = require("./localMediaStorage");
@@ -23,8 +23,42 @@ function getPublicBaseUrl() {
   return String(base || "").replace(/\/$/, "");
 }
 
-function publicPathForId(id) {
-  return `${PUBLIC_PATH_PREFIX}/${id}`;
+function generatePublicToken() {
+  return crypto.randomBytes(24).toString("base64url");
+}
+
+function publicPathForToken(token) {
+  return `${PUBLIC_PATH_PREFIX}/${token}`;
+}
+
+/** Opaque URL segment (base64url); rejects injection / odd paths */
+function isValidPublicTokenSegment(segment) {
+  return typeof segment === "string" && /^[A-Za-z0-9_-]+$/.test(segment);
+}
+
+/**
+ * Legacy rows may lack public_token; assign one so public_url stays stable thereafter.
+ * @param {import("sequelize").Model} media
+ */
+async function ensurePublicToken(media) {
+  if (media.public_token) return media;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const token = generatePublicToken();
+    try {
+      await media.update({
+        public_token: token,
+        url: publicPathForToken(token),
+      });
+      await media.reload();
+      return media;
+    } catch (e) {
+      if (e.name === "SequelizeUniqueConstraintError") continue;
+      throw e;
+    }
+  }
+  const err = new Error("Could not allocate public token");
+  err.statusCode = 500;
+  throw err;
 }
 
 function toPublicJson(mediaRow) {
@@ -123,18 +157,31 @@ async function createFromUploadedFile(file, actor, body) {
   const size = file.buffer.length;
   const mime = file.mimetype || "application/octet-stream";
 
-  const media = await Media.create({
-    organisation_id: orgId,
-    name: displayName,
-    description: body.description != null ? String(body.description) : null,
-    type: mime,
-    size,
-    storage_key,
-    url: "__pending__",
-  });
-
-  await media.update({ url: publicPathForId(media.id) });
-  await media.reload();
+  let media;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const public_token = generatePublicToken();
+    try {
+      media = await Media.create({
+        organisation_id: orgId,
+        name: displayName,
+        description: body.description != null ? String(body.description) : null,
+        type: mime,
+        size,
+        storage_key,
+        public_token,
+        url: publicPathForToken(public_token),
+      });
+      break;
+    } catch (e) {
+      if (e.name === "SequelizeUniqueConstraintError") continue;
+      throw e;
+    }
+  }
+  if (!media) {
+    const err = new Error("Could not allocate public token");
+    err.statusCode = 500;
+    throw err;
+  }
   return toPublicJson(media);
 }
 
@@ -170,8 +217,12 @@ async function listMedia(
     ],
   });
 
+  const enriched = await Promise.all(
+    rows.map(async (r) => toPublicJson(await ensurePublicToken(r))),
+  );
+
   return {
-    media: rows.map((r) => toPublicJson(r)),
+    media: enriched,
     pagination: {
       total: count,
       page: p,
@@ -197,6 +248,7 @@ async function getMediaById(id, actor) {
     throw err;
   }
   assertActorCanAccessOrg(actor, media.organisation_id);
+  await ensurePublicToken(media);
   return toPublicJson(media);
 }
 
@@ -231,6 +283,8 @@ async function updateMedia(id, body, actor) {
   }
   await media.update(updates);
   await media.reload();
+  await ensurePublicToken(media);
+  // public_token and url stay unchanged when only name/description update
   return toPublicJson(media);
 }
 
@@ -248,16 +302,36 @@ async function deleteMedia(id, actor) {
 }
 
 /**
- * Public file stream path (no auth).
+ * Public file stream (no auth). `segment` is public_token, or legacy numeric media id.
  * @returns {{ media: Media, absolutePath: string }}
  */
-async function getPublicFilePayload(id) {
-  const media = await Media.findByPk(id);
+async function getPublicFilePayload(segment) {
+  const raw = String(segment || "").trim();
+  if (!raw) {
+    const err = new Error("Not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  let media;
+  if (/^\d+$/.test(raw)) {
+    media = await Media.findByPk(parseInt(raw, 10));
+  } else if (isValidPublicTokenSegment(raw)) {
+    media = await Media.findOne({ where: { public_token: raw } });
+  } else {
+    const err = new Error("Not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
   if (!media) {
     const err = new Error("Not found");
     err.statusCode = 404;
     throw err;
   }
+
+  await ensurePublicToken(media);
+
   const absolutePath = localMediaStorage.resolveAbsolutePath(media.storage_key);
   if (!fs.existsSync(absolutePath)) {
     const err = new Error("Not found");
@@ -270,7 +344,8 @@ async function getPublicFilePayload(id) {
 module.exports = {
   getMaxUploadBytes,
   getPublicBaseUrl,
-  publicPathForId,
+  generatePublicToken,
+  publicPathForToken,
   createFromUploadedFile,
   listMedia,
   getMediaById,

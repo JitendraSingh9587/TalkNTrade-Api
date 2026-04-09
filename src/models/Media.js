@@ -25,7 +25,16 @@ const Media = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    /** Public path pattern, e.g. /api/v1/media/public/123 */
+    /**
+     * Opaque token for public URL (stable; not tied to display name).
+     * Path: /api/v1/media/public/{public_token}
+     */
+    public_token: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      unique: true,
+    },
+    /** Public path pattern, e.g. /api/v1/media/public/{public_token} */
     url: {
       type: DataTypes.STRING(512),
       allowNull: false,

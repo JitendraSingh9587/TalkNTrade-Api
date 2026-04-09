@@ -1,13 +1,17 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const app = require('./src/app');
-const { connectDB, syncDB } = require('./src/config/database');
-const { seedSettings } = require('./src/seeders/settingsSeeder');
-const { seedAdminUser } = require('./src/seeders/userSeeder');
-const settingsCache = require('./src/shared/services/settingsCache');
+const app = require("./src/app");
+const {
+  connectDB,
+  syncDB,
+  ensureMediaPublicTokenColumn,
+} = require("./src/config/database");
+const { seedSettings } = require("./src/seeders/settingsSeeder");
+const { seedAdminUser } = require("./src/seeders/userSeeder");
+const settingsCache = require("./src/shared/services/settingsCache");
 
 // Import all models to register them with Sequelize
-require('./src/models');
+require("./src/models");
 
 const PORT = process.env.PORT || 3000;
 
@@ -20,8 +24,9 @@ const startServer = async () => {
     // Sync database models (create tables if they don't exist)
     // alter: true - alters tables to match models without dropping data
     // Set DB_SYNC_ALTER=false in .env to disable auto-alter in production
-    const shouldAlter = process.env.DB_SYNC_ALTER !== 'false';
+    const shouldAlter = process.env.DB_SYNC_ALTER !== "false";
     await syncDB(false, shouldAlter);
+    await ensureMediaPublicTokenColumn();
 
     // Seed settings (JWT secrets, etc.)
     await seedSettings();
@@ -35,11 +40,13 @@ const startServer = async () => {
     // Start Express server
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on http://localhost:${PORT}`);
-      console.log(`📚 Swagger documentation available at http://localhost:${PORT}/api-docs`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(
+        `📚 Swagger documentation available at http://localhost:${PORT}/api-docs`,
+      );
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 };
