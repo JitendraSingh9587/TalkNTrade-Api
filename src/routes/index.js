@@ -66,7 +66,11 @@ router.use("/v1/otp", otpRoutes);
 router.use("/v1/users", authorize("SUPER_ADMIN", "ADMIN"), userRoutes);
 router.use("/v1/settings", authorize("SUPER_ADMIN"), settingsRoutes);
 router.use("/v1/organisations", authorize("SUPER_ADMIN"), organisationRoutes);
-router.use("/v1/media", authorize("SUPER_ADMIN", "ADMIN"), mediaRoutes);
+router.use(
+  "/v1/media",
+  authorize("SUPER_ADMIN", "ADMIN", "SUPERVISOR"),
+  mediaRoutes,
+);
 router.use("/v1/brands", brandRoutes);
 router.use("/v1/brand-models", brandModelRoutes);
 router.use("/v1/products", productRoutes);
