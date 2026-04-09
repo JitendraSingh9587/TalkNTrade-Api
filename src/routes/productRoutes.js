@@ -11,13 +11,14 @@ const {
 } = require("../controllers/productController");
 
 const READ_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"];
-const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
+const WRITE_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR"];
+const DELETE_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 /**
  * @swagger
  * tags:
  *   name: Products
- *   description: Organisation-scoped inventory (read all org roles; create/update/delete admins only)
+ *   description: Organisation-scoped inventory (super admin, admin, supervisor can create/update; only super admin and admin can delete)
  */
 
 /**
@@ -52,7 +53,7 @@ const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
  *         name: model_id
  *         schema: { type: integer }
  *   post:
- *     summary: Create product (super admin or org admin)
+ *     summary: Create product (super admin, org admin, or supervisor)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -67,7 +68,7 @@ const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
  *     security:
  *       - bearerAuth: []
  *   put:
- *     summary: Update product (super admin or org admin)
+ *     summary: Update product (super admin, org admin, or supervisor)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -80,8 +81,8 @@ const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 router.get("/", authorize(...READ_ROLES), asyncHandler(listProducts));
 router.get("/:id", authorize(...READ_ROLES), asyncHandler(getProductById));
-router.post("/", authorize(...ADMIN_ROLES), asyncHandler(createProduct));
-router.put("/:id", authorize(...ADMIN_ROLES), asyncHandler(updateProduct));
-router.delete("/:id", authorize(...ADMIN_ROLES), asyncHandler(deleteProduct));
+router.post("/", authorize(...WRITE_ROLES), asyncHandler(createProduct));
+router.put("/:id", authorize(...WRITE_ROLES), asyncHandler(updateProduct));
+router.delete("/:id", authorize(...DELETE_ROLES), asyncHandler(deleteProduct));
 
 module.exports = router;

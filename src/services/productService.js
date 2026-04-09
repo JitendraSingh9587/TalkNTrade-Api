@@ -62,7 +62,7 @@ function resolveOrganisationIdForCreate(actor, body) {
     }
     return n;
   }
-  if (actor.role === "ADMIN") {
+  if (actor.role === "ADMIN" || actor.role === "SUPERVISOR") {
     if (!actor.organisation_id) {
       const err = new Error("Your account is not linked to an organisation");
       err.statusCode = 403;
@@ -70,7 +70,7 @@ function resolveOrganisationIdForCreate(actor, body) {
     }
     return parseInt(actor.organisation_id, 10);
   }
-  const err = new Error("Only administrators can create products");
+  const err = new Error("You are not allowed to create products");
   err.statusCode = 403;
   throw err;
 }
@@ -213,8 +213,12 @@ const updateProduct = async (actor, rawId, normalized, rawBody) => {
   }
   assertActorCanAccessOrg(actor, product.organisation_id);
 
-  if (actor.role !== "SUPER_ADMIN" && actor.role !== "ADMIN") {
-    const err = new Error("Only administrators can update products");
+  if (
+    actor.role !== "SUPER_ADMIN" &&
+    actor.role !== "ADMIN" &&
+    actor.role !== "SUPERVISOR"
+  ) {
+    const err = new Error("You are not allowed to update products");
     err.statusCode = 403;
     throw err;
   }
