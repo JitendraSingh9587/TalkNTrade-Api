@@ -4,6 +4,8 @@ const Otp = require("./Otp");
 const Organisation = require("./Organisation");
 const PasswordResetToken = require("./PasswordResetToken");
 const Media = require("./Media");
+const Brand = require("./Brand");
+const BrandModel = require("./BrandModel");
 
 /**
  * Define model relationships
@@ -61,6 +63,16 @@ const defineRelationships = () => {
   Media.belongsTo(Organisation, {
     foreignKey: "organisation_id",
     as: "organisation",
+  });
+
+  Brand.hasMany(BrandModel, {
+    foreignKey: "brand_id",
+    as: "models",
+  });
+
+  BrandModel.belongsTo(Brand, {
+    foreignKey: "brand_id",
+    as: "brand",
   });
 };
 

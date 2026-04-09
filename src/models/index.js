@@ -7,6 +7,8 @@ const AppSetting = require("./AppSetting");
 const Otp = require("./Otp");
 const PasswordResetToken = require("./PasswordResetToken");
 const Media = require("./Media");
+const Brand = require("./Brand");
+const BrandModel = require("./BrandModel");
 const defineRelationships = require("./relationships");
 
 /**
@@ -27,4 +29,6 @@ module.exports = {
   Otp,
   PasswordResetToken,
   Media,
+  Brand,
+  BrandModel,
 };
