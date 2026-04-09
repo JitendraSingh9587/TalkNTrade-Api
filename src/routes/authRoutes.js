@@ -28,6 +28,30 @@ const {
  *         description: Missing, invalid, or expired token
  */
 router.get("/verify", asyncHandler(verifyToken));
+
+/**
+ * @swagger
+ * /api/v1/auth/complete-organisation:
+ *   post:
+ *     summary: Create organisation and link ADMIN account (pending org setup only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Organisation payload (name, type, etc.)
+ *     responses:
+ *       200:
+ *         description: Organisation created and linked
+ *       400:
+ *         description: Validation error or not eligible
+ *       401:
+ *         description: Unauthorized
+ */
 router.post("/complete-organisation", asyncHandler(completeOrganisation));
 
 module.exports = router;

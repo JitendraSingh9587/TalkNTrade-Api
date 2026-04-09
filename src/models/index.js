@@ -6,6 +6,7 @@ const AuditLog = require("./AuditLog");
 const AppSetting = require("./AppSetting");
 const Otp = require("./Otp");
 const PasswordResetToken = require("./PasswordResetToken");
+const Media = require("./Media");
 const defineRelationships = require("./relationships");
 
 /**
@@ -25,4 +26,5 @@ module.exports = {
   AppSetting,
   Otp,
   PasswordResetToken,
+  Media,
 };

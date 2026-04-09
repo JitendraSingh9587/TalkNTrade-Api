@@ -1,33 +1,34 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-const path = require('path');
+const swaggerJsdoc = require("swagger-jsdoc");
+const path = require("path");
 
 const swaggerOptions = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'TalkNTrade API',
-      version: '1.0.0',
-      description: 'API documentation for TalkNTrade',
+      title: "TalkNTrade API",
+      version: "1.0.0",
+      description: "API documentation for TalkNTrade",
     },
     servers: [
       {
         url: `http://localhost:${process.env.PORT || 3000}`,
-        description: 'Development server',
+        description: "Development server",
       },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
         },
       },
     },
   },
   apis: [
-    path.join(__dirname, '../routes/*.js'),
-    path.join(__dirname, '../controllers/*.js'),
+    path.join(__dirname, "../docs/openapiPaths.js"),
+    path.join(__dirname, "../routes/*.js"),
+    path.join(__dirname, "../controllers/*.js"),
   ],
 };
 

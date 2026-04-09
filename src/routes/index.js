@@ -13,6 +13,8 @@ const registerController = require("../controllers/registerController");
 const passwordResetController = require("../controllers/passwordResetController");
 const { getMyOrganisation } = require("../controllers/organisationController");
 const { login, logout } = require("../controllers/authController");
+const mediaController = require("../controllers/mediaController");
+const mediaRoutes = require("./mediaRoutes");
 
 // --- Public (no access token required) ---
 router.use("/", healthRoutes);
@@ -47,6 +49,11 @@ router.post(
   asyncHandler(passwordResetController.resetPassword),
 );
 
+router.get(
+  "/v1/media/public/:token",
+  asyncHandler(mediaController.servePublicMedia),
+);
+
 // --- All routes below require a valid access token (cookie or Bearer) ---
 router.use(authenticate);
 
@@ -56,5 +63,6 @@ router.use("/v1/otp", otpRoutes);
 router.use("/v1/users", authorize("SUPER_ADMIN", "ADMIN"), userRoutes);
 router.use("/v1/settings", authorize("SUPER_ADMIN"), settingsRoutes);
 router.use("/v1/organisations", authorize("SUPER_ADMIN"), organisationRoutes);
+router.use("/v1/media", authorize("SUPER_ADMIN", "ADMIN"), mediaRoutes);
 
 module.exports = router;
