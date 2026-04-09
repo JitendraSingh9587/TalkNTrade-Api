@@ -163,6 +163,26 @@ const ensureProductWarrantyColumns = async () => {
   }
 };
 
+/** Sequelize sync alter may skip new columns on existing MySQL `products` table. */
+const ensureProductMrpColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'mrp'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `products` ADD COLUMN `mrp` DECIMAL(12,2) NULL",
+  );
+  console.log("✅ Schema patch: added column products.mrp");
+};
+
 const ensureBrandCatalogVerificationColumns = async () => {
   const [brandTables] = await sequelize.query(
     `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
@@ -215,5 +235,6 @@ module.exports = {
   syncDB,
   ensureMediaPublicTokenColumn,
   ensureProductWarrantyColumns,
+  ensureProductMrpColumn,
   ensureBrandCatalogVerificationColumns,
 };

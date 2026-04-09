@@ -73,6 +73,11 @@ const Product = sequelize.define(
       type: DataTypes.DECIMAL(12, 2),
       allowNull: true,
     },
+    /** Maximum retail price (list price) */
+    mrp: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: true,
+    },
     is_new: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

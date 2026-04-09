@@ -124,6 +124,10 @@ function validateProductPayload(body, { partial = false } = {}) {
     if (!msp.ok) errors.push(msp.error);
     else normalized.minimum_selling_price = msp.value;
 
+    const mrp = optionalDecimal(body.mrp, "mrp");
+    if (!mrp.ok) errors.push(mrp.error);
+    else normalized.mrp = mrp.value;
+
     normalized.imei_number =
       body.imei_number == null || body.imei_number === ""
         ? null
@@ -247,6 +251,7 @@ function validateProductPayload(body, { partial = false } = {}) {
       "purchase_price",
       "additional_charges",
       "minimum_selling_price",
+      "mrp",
     ]) {
       if (body[key] !== undefined) {
         const r = optionalDecimal(body[key], key);

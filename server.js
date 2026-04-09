@@ -6,6 +6,7 @@ const {
   syncDB,
   ensureMediaPublicTokenColumn,
   ensureProductWarrantyColumns,
+  ensureProductMrpColumn,
   ensureBrandCatalogVerificationColumns,
 } = require("./src/config/database");
 const { seedSettings } = require("./src/seeders/settingsSeeder");
@@ -30,6 +31,7 @@ const startServer = async () => {
     await syncDB(false, shouldAlter);
     await ensureMediaPublicTokenColumn();
     await ensureProductWarrantyColumns();
+    await ensureProductMrpColumn();
     await ensureBrandCatalogVerificationColumns();
 
     // Seed settings (JWT secrets, etc.)
