@@ -9,6 +9,7 @@ const PasswordResetToken = require("./PasswordResetToken");
 const Media = require("./Media");
 const Brand = require("./Brand");
 const BrandModel = require("./BrandModel");
+const Product = require("./Product");
 const defineRelationships = require("./relationships");
 
 /**
@@ -31,4 +32,5 @@ module.exports = {
   Media,
   Brand,
   BrandModel,
+  Product,
 };
