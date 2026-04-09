@@ -66,6 +66,26 @@ const defineRelationships = () => {
     as: "organisation",
   });
 
+  Organisation.hasMany(Brand, {
+    foreignKey: "organisation_id",
+    as: "submittedBrands",
+  });
+
+  Brand.belongsTo(Organisation, {
+    foreignKey: "organisation_id",
+    as: "submittedByOrganisation",
+  });
+
+  Organisation.hasMany(BrandModel, {
+    foreignKey: "organisation_id",
+    as: "submittedBrandModels",
+  });
+
+  BrandModel.belongsTo(Organisation, {
+    foreignKey: "organisation_id",
+    as: "submittedByOrganisation",
+  });
+
   Brand.hasMany(BrandModel, {
     foreignKey: "brand_id",
     as: "models",

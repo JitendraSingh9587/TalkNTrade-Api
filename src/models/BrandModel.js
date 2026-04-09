@@ -26,6 +26,16 @@ const BrandModel = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    is_verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    organisation_id: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+      references: { model: "organisations", key: "id" },
+    },
   },
   {
     tableName: "brand_models",

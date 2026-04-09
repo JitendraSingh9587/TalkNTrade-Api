@@ -21,6 +21,18 @@ const Brand = sequelize.define(
       type: DataTypes.STRING(512),
       allowNull: true,
     },
+    /** Super-admin–approved catalog entries are visible to all organisations. */
+    is_verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    /** Organisation that submitted this brand (null = global / legacy). */
+    organisation_id: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+      references: { model: "organisations", key: "id" },
+    },
   },
   {
     tableName: "brands",

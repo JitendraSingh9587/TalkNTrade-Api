@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const asyncHandler = require("../utils/asyncHandler");
+const { authorize } = require("../middleware/authorize");
 const {
   listBrandModels,
   createBrandModel,
   getBrandModelById,
   updateBrandModel,
   deleteBrandModel,
+  verifyBrandModel,
 } = require("../controllers/brandModelController");
 
 /**
@@ -77,6 +79,11 @@ const {
 
 router.get("/", asyncHandler(listBrandModels));
 router.post("/", asyncHandler(createBrandModel));
+router.patch(
+  "/:id/verify",
+  authorize("SUPER_ADMIN"),
+  asyncHandler(verifyBrandModel),
+);
 router.get("/:id", asyncHandler(getBrandModelById));
 router.put("/:id", asyncHandler(updateBrandModel));
 router.delete("/:id", asyncHandler(deleteBrandModel));

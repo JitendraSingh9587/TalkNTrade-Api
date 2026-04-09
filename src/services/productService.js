@@ -75,7 +75,7 @@ function resolveOrganisationIdForCreate(actor, body) {
   throw err;
 }
 
-async function resolveBrandModelNames(brandId, modelId) {
+async function resolveBrandModelNames(actor, brandId, modelId) {
   const brand = await Brand.findByPk(brandId);
   if (!brand) {
     const err = new Error("Brand not found");
@@ -93,6 +93,35 @@ async function resolveBrandModelNames(brandId, modelId) {
     err.statusCode = 400;
     throw err;
   }
+
+  if (actor.role === "SUPER_ADMIN") {
+    return { brand_name: brand.name, model_name: bm.name };
+  }
+
+  const oid =
+    actor.organisation_id != null ? parseInt(actor.organisation_id, 10) : null;
+  if (oid == null || Number.isNaN(oid)) {
+    const err = new Error("Your account is not linked to an organisation");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const canBrand =
+    brand.is_verified === true ||
+    (brand.organisation_id != null &&
+      parseInt(brand.organisation_id, 10) === oid);
+  const canModel =
+    bm.is_verified === true ||
+    (bm.organisation_id != null && parseInt(bm.organisation_id, 10) === oid);
+
+  if (!canBrand || !canModel) {
+    const err = new Error(
+      "Selected brand or model is not available to your organisation (pending super-admin approval).",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
   return { brand_name: brand.name, model_name: bm.name };
 }
 
@@ -157,6 +186,7 @@ const createProduct = async (actor, normalized, rawBody) => {
   assertActorCanAccessOrg(actor, orgId);
 
   const { brand_name, model_name } = await resolveBrandModelNames(
+    actor,
     normalized.brand_id,
     normalized.model_id,
   );
@@ -228,7 +258,7 @@ const updateProduct = async (actor, rawId, normalized, rawBody) => {
   if (payload.brand_id !== undefined || payload.model_id !== undefined) {
     const brandId = payload.brand_id ?? product.brand_id;
     const modelId = payload.model_id ?? product.model_id;
-    const names = await resolveBrandModelNames(brandId, modelId);
+    const names = await resolveBrandModelNames(actor, brandId, modelId);
     payload.brand_name = names.brand_name;
     payload.model_name = names.model_name;
   }

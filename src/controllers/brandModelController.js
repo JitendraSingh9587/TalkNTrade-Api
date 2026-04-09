@@ -7,9 +7,11 @@ const { sendSuccess, sendError } = require("../utils/response");
 const listBrandModels = async (req, res) => {
   try {
     const result = await brandModelService.listBrandModels(
+      req.user,
       {
         search: req.query.search,
         brand_id: req.query.brand_id,
+        pending_only: req.query.pending_only === "true",
       },
       { page: req.query.page, limit: req.query.limit },
     );
@@ -25,7 +27,7 @@ const createBrandModel = async (req, res) => {
     if (!validation.isValid) {
       return sendError(res, validation.errors.join(", "), 400);
     }
-    const row = await brandModelService.createBrandModel(req.body);
+    const row = await brandModelService.createBrandModel(req.user, req.body);
     sendSuccess(res, row, "Brand model created successfully", 201);
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -34,7 +36,10 @@ const createBrandModel = async (req, res) => {
 
 const getBrandModelById = async (req, res) => {
   try {
-    const row = await brandModelService.getBrandModelById(req.params.id);
+    const row = await brandModelService.getBrandModelById(
+      req.user,
+      req.params.id,
+    );
     sendSuccess(res, row, "Brand model retrieved successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
@@ -51,6 +56,7 @@ const updateBrandModel = async (req, res) => {
       return sendError(res, validation.errors.join(", "), 400);
     }
     const row = await brandModelService.updateBrandModel(
+      req.user,
       req.params.id,
       req.body,
     );
@@ -62,8 +68,20 @@ const updateBrandModel = async (req, res) => {
 
 const deleteBrandModel = async (req, res) => {
   try {
-    const result = await brandModelService.deleteBrandModel(req.params.id);
+    const result = await brandModelService.deleteBrandModel(
+      req.user,
+      req.params.id,
+    );
     sendSuccess(res, result, "Brand model deleted successfully");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+const verifyBrandModel = async (req, res) => {
+  try {
+    const row = await brandModelService.verifyBrandModel(req.params.id);
+    sendSuccess(res, row, "Brand model verified successfully");
   } catch (error) {
     sendError(res, error.message, error.statusCode || 500);
   }
@@ -75,4 +93,5 @@ module.exports = {
   getBrandModelById,
   updateBrandModel,
   deleteBrandModel,
+  verifyBrandModel,
 };
