@@ -88,10 +88,21 @@ const Product = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    is_warranty_available: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    warranty_expires_at: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    /** @deprecated Use is_warranty_available + warranty_expires_at */
     warranty_available_time: {
       type: DataTypes.DATEONLY,
       allowNull: true,
     },
+    /** @deprecated Use is_warranty_available + warranty_expires_at */
     warranty_duration: {
       type: DataTypes.STRING(64),
       allowNull: true,

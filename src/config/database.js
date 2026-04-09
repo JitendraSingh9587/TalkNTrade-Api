@@ -132,9 +132,41 @@ const ensureMediaPublicTokenColumn = async () => {
   console.log("✅ Schema patch: added column media.public_token");
 };
 
+/**
+ * Sequelize sync alter may skip new columns on existing MySQL `products` table.
+ */
+const ensureProductWarrantyColumns = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [cols] = await sequelize.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+       AND COLUMN_NAME IN ('is_warranty_available', 'warranty_expires_at')`,
+  );
+  const have = new Set((cols || []).map((r) => r.COLUMN_NAME));
+
+  if (!have.has("is_warranty_available")) {
+    await sequelize.query(
+      "ALTER TABLE `products` ADD COLUMN `is_warranty_available` TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    console.log("✅ Schema patch: added column products.is_warranty_available");
+  }
+  if (!have.has("warranty_expires_at")) {
+    await sequelize.query(
+      "ALTER TABLE `products` ADD COLUMN `warranty_expires_at` DATE NULL",
+    );
+    console.log("✅ Schema patch: added column products.warranty_expires_at");
+  }
+};
+
 module.exports = {
   sequelize,
   connectDB,
   syncDB,
   ensureMediaPublicTokenColumn,
+  ensureProductWarrantyColumns,
 };

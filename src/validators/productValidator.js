@@ -29,6 +29,22 @@ function parseBool(raw) {
   return { ok: false, error: "must be a boolean" };
 }
 
+/** @param {unknown} raw */
+function parseDateOnly(raw) {
+  if (raw === undefined || raw === null || raw === "") {
+    return { ok: true, value: null };
+  }
+  const s = String(raw).trim().slice(0, 32);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return { ok: false, error: "must be a valid date (YYYY-MM-DD)" };
+  }
+  const d = new Date(`${s}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) {
+    return { ok: false, error: "invalid date" };
+  }
+  return { ok: true, value: s };
+}
+
 function normalizeImages(raw) {
   if (raw === undefined || raw === null) return { ok: true, value: [] };
   if (!Array.isArray(raw)) {
@@ -138,15 +154,25 @@ function validateProductPayload(body, { partial = false } = {}) {
       }
     }
 
-    normalized.warranty_available_time =
-      body.warranty_available_time == null ||
-      body.warranty_available_time === ""
-        ? null
-        : String(body.warranty_available_time).slice(0, 32);
-    normalized.warranty_duration =
-      body.warranty_duration == null || body.warranty_duration === ""
-        ? null
-        : String(body.warranty_duration).slice(0, 64);
+    if (body.is_warranty_available === undefined) {
+      normalized.is_warranty_available = false;
+    } else {
+      const wb = parseBool(body.is_warranty_available);
+      if (!wb.ok) errors.push(`is_warranty_available ${wb.error}`);
+      else normalized.is_warranty_available = wb.value;
+    }
+
+    if (normalized.is_warranty_available) {
+      const wd = parseDateOnly(body.warranty_expires_at);
+      if (!wd.ok) errors.push(`warranty_expires_at ${wd.error}`);
+      else if (wd.value == null) {
+        errors.push(
+          "warranty_expires_at is required when is_warranty_available is true",
+        );
+      } else normalized.warranty_expires_at = wd.value;
+    } else {
+      normalized.warranty_expires_at = null;
+    }
 
     if (
       body.battery_percentage !== undefined &&
@@ -258,18 +284,40 @@ function validateProductPayload(body, { partial = false } = {}) {
         else normalized[key] = b.value;
       }
     }
-    if (body.warranty_available_time !== undefined) {
-      normalized.warranty_available_time =
-        body.warranty_available_time === null ||
-        body.warranty_available_time === ""
-          ? null
-          : String(body.warranty_available_time).slice(0, 32);
+    if (body.warranty_expires_at !== undefined) {
+      if (
+        body.warranty_expires_at === null ||
+        body.warranty_expires_at === ""
+      ) {
+        normalized.warranty_expires_at = null;
+      } else {
+        const wd = parseDateOnly(body.warranty_expires_at);
+        if (!wd.ok) errors.push(`warranty_expires_at ${wd.error}`);
+        else normalized.warranty_expires_at = wd.value;
+      }
     }
-    if (body.warranty_duration !== undefined) {
-      normalized.warranty_duration =
-        body.warranty_duration === null || body.warranty_duration === ""
-          ? null
-          : String(body.warranty_duration).slice(0, 64);
+    if (body.is_warranty_available !== undefined) {
+      const wb = parseBool(body.is_warranty_available);
+      if (!wb.ok) errors.push("is_warranty_available must be a boolean");
+      else {
+        normalized.is_warranty_available = wb.value;
+        if (!wb.value) normalized.warranty_expires_at = null;
+      }
+    }
+    if (
+      normalized.warranty_expires_at != null &&
+      normalized.is_warranty_available === undefined
+    ) {
+      normalized.is_warranty_available = true;
+    }
+    if (
+      normalized.is_warranty_available === true &&
+      (normalized.warranty_expires_at === undefined ||
+        normalized.warranty_expires_at === null)
+    ) {
+      errors.push(
+        "warranty_expires_at is required when is_warranty_available is true",
+      );
     }
     if (body.battery_percentage !== undefined) {
       if (body.battery_percentage === null || body.battery_percentage === "") {
