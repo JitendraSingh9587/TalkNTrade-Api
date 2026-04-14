@@ -180,6 +180,58 @@ const productInclude = {
   ],
 };
 
+/** Richer includes for single-invoice fetch (print / view). */
+const organisationDetailInclude = {
+  model: Organisation,
+  as: "organisation",
+  attributes: [
+    "id",
+    "name",
+    "address",
+    "phone",
+    "email",
+    "website",
+    "type",
+  ],
+};
+
+const customerDetailInclude = {
+  model: Customer,
+  as: "customer",
+  attributes: [
+    "id",
+    "full_name",
+    "phone",
+    "email",
+    "alternate_phone",
+    "company_name",
+    "gst_number",
+    "address",
+    "customer_type",
+    "organisation_id",
+  ],
+};
+
+const productDetailInclude = {
+  model: Product,
+  as: "product",
+  attributes: [
+    "id",
+    "name",
+    "brand_name",
+    "model_name",
+    "variant",
+    "imei_number",
+    "description",
+    "mrp",
+    "minimum_selling_price",
+    "purchase_price",
+    "color",
+    "network_type",
+    "is_sold",
+  ],
+};
+
 function assertCanRecordProductSale(actor) {
   const ok = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"].includes(actor.role);
   if (!ok) {
@@ -338,13 +390,9 @@ const getInvoiceById = async (actor, rawId) => {
   const id = parseId(rawId);
   const row = await Invoice.findByPk(id, {
     include: [
-      {
-        model: Organisation,
-        as: "organisation",
-        attributes: ["id", "name"],
-      },
-      customerInclude,
-      productInclude,
+      organisationDetailInclude,
+      customerDetailInclude,
+      productDetailInclude,
     ],
   });
   if (!row) {
