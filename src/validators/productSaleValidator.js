@@ -124,6 +124,15 @@ function validateProductSalePayload(body) {
     }
   }
 
+  if (
+    normalized.final_amount !== undefined &&
+    normalized.paid_amount !== undefined
+  ) {
+    if (normalized.paid_amount > normalized.final_amount + 0.02) {
+      errors.push("paid_amount cannot exceed final_amount");
+    }
+  }
+
   if (body.organisation_id !== undefined && body.organisation_id !== null) {
     const oid = parseInt(body.organisation_id, 10);
     if (Number.isNaN(oid) || oid < 1) {
