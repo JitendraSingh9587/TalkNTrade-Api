@@ -66,6 +66,17 @@ function validateOrganisationPayload(data, { partial = false } = {}) {
     errors.push("Organisation banner_url must be at most 512 characters");
   }
 
+  if (
+    data.gst_number !== undefined &&
+    data.gst_number != null &&
+    data.gst_number !== ""
+  ) {
+    const g = String(data.gst_number).trim();
+    if (g.length > 20) {
+      errors.push("GST number must be at most 20 characters");
+    }
+  }
+
   if (data.status !== undefined && data.status !== null && data.status !== "") {
     if (!ORG_STATUSES.includes(data.status)) {
       errors.push(

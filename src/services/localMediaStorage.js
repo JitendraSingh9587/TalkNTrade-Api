@@ -73,9 +73,54 @@ function removeFile(storage_key) {
   }
 }
 
+const ORG_SETUP_LOGO_DIR = "org_setup/logo";
+const ORG_SETUP_BANNER_DIR = "org_setup/banner";
+
+function orgSetupSubdir(kind) {
+  const k = String(kind || "").toLowerCase();
+  if (k === "banner") return ORG_SETUP_BANNER_DIR;
+  return ORG_SETUP_LOGO_DIR;
+}
+
+function extFromImageMime(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m === "image/jpeg") return ".jpg";
+  if (m === "image/png") return ".png";
+  if (m === "image/webp") return ".webp";
+  if (m === "image/gif") return ".gif";
+  return null;
+}
+
+/**
+ * Pre–organisation uploads (setup wizard). Stored under org_setup/logo or org_setup/banner.
+ * @param {"logo"|"banner"} kind
+ * @param {string} mime
+ * @param {string} [originalFilename]
+ * @returns {{ absolutePath: string, storage_key: string, filename: string }}
+ */
+function allocateOrgSetupAssetPath(kind, mime, originalFilename = "") {
+  const sub = orgSetupSubdir(kind);
+  const dir = path.join(getStorageRoot(), ...sub.split("/"));
+  fs.mkdirSync(dir, { recursive: true });
+  let ext = extFromImageMime(mime);
+  if (!ext) {
+    const e = path.extname(originalFilename || "").toLowerCase();
+    if ([".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(e)) {
+      ext = e === ".jpeg" ? ".jpg" : e;
+    }
+  }
+  if (!ext) ext = ".png";
+  const base = `${randomUUID()}${ext}`;
+  const absolutePath = path.join(dir, base);
+  const storage_key = path.join(sub, base).replace(/\\/g, "/");
+  return { absolutePath, storage_key, filename: base };
+}
+
 module.exports = {
   getStorageRoot,
   allocatePath,
   resolveAbsolutePath,
   removeFile,
+  allocateOrgSetupAssetPath,
+  orgSetupSubdir,
 };

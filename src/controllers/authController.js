@@ -10,6 +10,7 @@ const {
   expiryStringToSeconds,
   getTokenExpiry,
 } = require("../shared/utils/jwt");
+const organisationSetupUploadService = require("../services/organisationSetupUploadService");
 
 /**
  * Auth Controller
@@ -140,6 +141,23 @@ const verifyToken = async (req, res) => {
 /**
  * ADMIN without organisation: create org and link account (after email signup).
  */
+/**
+ * ADMIN without organisation: upload logo/banner for setup (stored under uploads/.../org_setup/).
+ */
+const uploadOrganisationSetupAsset = async (req, res) => {
+  try {
+    const kind = req.body?.kind != null ? String(req.body.kind) : "";
+    const data = await organisationSetupUploadService.saveUpload(
+      req.file,
+      kind,
+      req.user,
+    );
+    sendSuccess(res, data, "File uploaded successfully", 201);
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 const completeOrganisation = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN" || req.user.organisation_id) {
@@ -185,5 +203,6 @@ module.exports = {
   login,
   logout,
   verifyToken,
+  uploadOrganisationSetupAsset,
   completeOrganisation,
 };

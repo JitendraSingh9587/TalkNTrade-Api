@@ -52,6 +52,10 @@ const Organisation = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    gst_number: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE", "SUSPENDED"),
       allowNull: false,

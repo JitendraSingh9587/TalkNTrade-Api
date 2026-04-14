@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const asyncHandler = require("../utils/asyncHandler");
+const { uploadMediaSingle } = require("../middleware/mediaUpload");
 const {
   verifyToken,
   completeOrganisation,
+  uploadOrganisationSetupAsset,
 } = require("../controllers/authController");
 
 /**
@@ -28,6 +30,12 @@ const {
  *         description: Missing, invalid, or expired token
  */
 router.get("/verify", asyncHandler(verifyToken));
+
+router.post(
+  "/organisation-setup/upload",
+  uploadMediaSingle,
+  asyncHandler(uploadOrganisationSetupAsset),
+);
 
 /**
  * @swagger

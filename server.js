@@ -9,6 +9,7 @@ const {
   ensureProductWarrantyColumns,
   ensureProductMrpColumn,
   ensureBrandCatalogVerificationColumns,
+  ensureOrganisationGstNumberColumn,
 } = require("./src/config/database");
 const { seedSettings } = require("./src/seeders/settingsSeeder");
 const { seedUsers } = require("./src/seeders/userSeeder");
@@ -35,6 +36,7 @@ const startServer = async () => {
     await ensureProductWarrantyColumns();
     await ensureProductMrpColumn();
     await ensureBrandCatalogVerificationColumns();
+    await ensureOrganisationGstNumberColumn();
 
     // Seed settings (JWT secrets, etc.)
     await seedSettings();

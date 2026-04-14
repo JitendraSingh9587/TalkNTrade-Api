@@ -34,6 +34,7 @@ const listOrganisations = async (filters = {}, pagination = {}) => {
     where[Op.or] = [
       { name: { [Op.like]: `%${search}%` } },
       { email: { [Op.like]: `%${search}%` } },
+      { gst_number: { [Op.like]: `%${search}%` } },
     ];
   }
 
@@ -69,6 +70,10 @@ const createOrganisation = async (payload) => {
     logo_url: payload.logo_url ?? null,
     banner_url: payload.banner_url ?? null,
     description: payload.description ?? null,
+    gst_number:
+      payload.gst_number != null && String(payload.gst_number).trim() !== ""
+        ? String(payload.gst_number).trim()
+        : null,
     status: payload.status || "ACTIVE",
   });
   return row;
@@ -96,6 +101,7 @@ const updateOrganisation = async (id, payload) => {
     "logo_url",
     "banner_url",
     "description",
+    "gst_number",
     "status",
   ];
   const updates = {};
@@ -106,6 +112,11 @@ const updateOrganisation = async (id, payload) => {
   }
   if (updates.name !== undefined) {
     updates.name = String(updates.name).trim();
+  }
+  if (updates.gst_number !== undefined) {
+    const g = updates.gst_number;
+    updates.gst_number =
+      g == null || String(g).trim() === "" ? null : String(g).trim();
   }
   if (Object.keys(updates).length === 0) {
     return org;

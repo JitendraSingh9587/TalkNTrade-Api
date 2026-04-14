@@ -253,6 +253,26 @@ const ensureBrandCatalogVerificationColumns = async () => {
   }
 };
 
+/** Sequelize sync alter may skip new columns on existing MySQL `organisations` table. */
+const ensureOrganisationGstNumberColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'organisations'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'organisations' AND COLUMN_NAME = 'gst_number'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `organisations` ADD COLUMN `gst_number` VARCHAR(20) NULL",
+  );
+  console.log("✅ Schema patch: added column organisations.gst_number");
+};
+
 module.exports = {
   sequelize,
   connectDB,
@@ -262,4 +282,5 @@ module.exports = {
   ensureProductMrpColumn,
   ensureBrandCatalogVerificationColumns,
   ensureInvoiceProductIdColumn,
+  ensureOrganisationGstNumberColumn,
 };

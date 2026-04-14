@@ -58,6 +58,10 @@ router.get(
   "/v1/media/public/:token",
   asyncHandler(mediaController.servePublicMedia),
 );
+router.get(
+  "/v1/media/org-setup/:kind/:filename",
+  asyncHandler(mediaController.serveOrgSetupAsset),
+);
 
 // --- All routes below require a valid access token (cookie or Bearer) ---
 router.use(authenticate);

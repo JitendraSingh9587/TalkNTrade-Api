@@ -67,14 +67,16 @@ const authenticate = async (req, res, next) => {
       return next(error);
     }
 
-    const pathOnly = req.originalUrl.split("?")[0];
+    const pathOnly = req.originalUrl.split("?")[0].replace(/\/$/, "") || "/";
     const isPendingOrgAdmin = user.role === "ADMIN" && !user.organisation_id;
 
     if (isPendingOrgAdmin) {
       const allowedPending =
         (req.method === "GET" && pathOnly === "/api/v1/auth/verify") ||
         (req.method === "POST" &&
-          pathOnly === "/api/v1/auth/complete-organisation");
+          pathOnly === "/api/v1/auth/complete-organisation") ||
+        (req.method === "POST" &&
+          pathOnly === "/api/v1/auth/organisation-setup/upload");
       if (!allowedPending) {
         const error = new Error(
           "Complete your organisation setup to continue.",
