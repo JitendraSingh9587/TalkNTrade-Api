@@ -193,6 +193,7 @@ const organisationDetailInclude = {
     "website",
     "type",
     "logo_url",
+    "gst_number",
   ],
 };
 
