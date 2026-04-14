@@ -403,6 +403,13 @@ const updateInvoice = async (actor, rawId, normalized, _rawBody) => {
     normalized.paid_amount !== undefined
       ? normalized.paid_amount
       : invoice.paid_amount;
+  const paidNum = round2(num(paidRaw));
+  const finalForPaid = round2(num(amounts.final_amount));
+  if (paidNum > finalForPaid + 0.02) {
+    const err = new Error("paid_amount cannot exceed final_amount");
+    err.statusCode = 400;
+    throw err;
+  }
   const paidDerived = derivePaidAndStatus(amounts.final_amount, paidRaw);
 
   const payload = {
