@@ -62,7 +62,11 @@ function resolveOrganisationIdForCreate(actor, body) {
     }
     return n;
   }
-  if (actor.role === "ADMIN" || actor.role === "SUPERVISOR") {
+  if (
+    actor.role === "ADMIN" ||
+    actor.role === "SUPERVISOR" ||
+    actor.role === "USER"
+  ) {
     if (!actor.organisation_id) {
       const err = new Error("Your account is not linked to an organisation");
       err.statusCode = 403;
@@ -196,7 +200,8 @@ const updateCustomer = async (actor, rawId, normalized, _rawBody) => {
   if (
     actor.role !== "SUPER_ADMIN" &&
     actor.role !== "ADMIN" &&
-    actor.role !== "SUPERVISOR"
+    actor.role !== "SUPERVISOR" &&
+    actor.role !== "USER"
   ) {
     const err = new Error("You are not allowed to update customers");
     err.statusCode = 403;
@@ -254,7 +259,8 @@ const listAssignableUsers = async (actor, query) => {
   if (
     actor.role !== "SUPER_ADMIN" &&
     actor.role !== "ADMIN" &&
-    actor.role !== "SUPERVISOR"
+    actor.role !== "SUPERVISOR" &&
+    actor.role !== "USER"
   ) {
     const err = new Error("You are not allowed to list assignable users");
     err.statusCode = 403;

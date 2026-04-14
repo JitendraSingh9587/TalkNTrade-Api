@@ -12,7 +12,7 @@ const {
 } = require("../controllers/customerController");
 
 const READ_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"];
-const WRITE_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR"];
+const WRITE_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"];
 const DELETE_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 /**
