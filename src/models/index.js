@@ -11,6 +11,7 @@ const Brand = require("./Brand");
 const BrandModel = require("./BrandModel");
 const Product = require("./Product");
 const Customer = require("./Customer");
+const Invoice = require("./Invoice");
 const defineRelationships = require("./relationships");
 
 /**
@@ -35,4 +36,5 @@ module.exports = {
   BrandModel,
   Product,
   Customer,
+  Invoice,
 };

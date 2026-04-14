@@ -19,6 +19,7 @@ const brandRoutes = require("./brandRoutes");
 const brandModelRoutes = require("./brandModelRoutes");
 const productRoutes = require("./productRoutes");
 const customerRoutes = require("./customerRoutes");
+const invoiceRoutes = require("./invoiceRoutes");
 
 // --- Public (no access token required) ---
 router.use("/", healthRoutes);
@@ -76,5 +77,6 @@ router.use("/v1/brands", brandRoutes);
 router.use("/v1/brand-models", brandModelRoutes);
 router.use("/v1/products", productRoutes);
 router.use("/v1/customers", customerRoutes);
+router.use("/v1/invoices", invoiceRoutes);
 
 module.exports = router;

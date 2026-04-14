@@ -8,6 +8,7 @@ const Brand = require("./Brand");
 const BrandModel = require("./BrandModel");
 const Product = require("./Product");
 const Customer = require("./Customer");
+const Invoice = require("./Invoice");
 
 /**
  * Define model relationships
@@ -145,6 +146,26 @@ const defineRelationships = () => {
   Customer.belongsTo(User, {
     foreignKey: "assigned_to",
     as: "assignee",
+  });
+
+  Organisation.hasMany(Invoice, {
+    foreignKey: "organisation_id",
+    as: "invoices",
+  });
+
+  Invoice.belongsTo(Organisation, {
+    foreignKey: "organisation_id",
+    as: "organisation",
+  });
+
+  Customer.hasMany(Invoice, {
+    foreignKey: "customer_id",
+    as: "invoices",
+  });
+
+  Invoice.belongsTo(Customer, {
+    foreignKey: "customer_id",
+    as: "customer",
   });
 };
 
