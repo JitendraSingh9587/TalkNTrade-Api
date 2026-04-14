@@ -18,6 +18,7 @@ const mediaRoutes = require("./mediaRoutes");
 const brandRoutes = require("./brandRoutes");
 const brandModelRoutes = require("./brandModelRoutes");
 const productRoutes = require("./productRoutes");
+const customerRoutes = require("./customerRoutes");
 
 // --- Public (no access token required) ---
 router.use("/", healthRoutes);
@@ -74,5 +75,6 @@ router.use(
 router.use("/v1/brands", brandRoutes);
 router.use("/v1/brand-models", brandModelRoutes);
 router.use("/v1/products", productRoutes);
+router.use("/v1/customers", customerRoutes);
 
 module.exports = router;
