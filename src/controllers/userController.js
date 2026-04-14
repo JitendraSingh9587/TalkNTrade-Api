@@ -48,6 +48,7 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await userService.getUserById(id, {
+      id: req.user.id,
       role: req.user.role,
       organisation_id: req.user.organisation_id,
     });
@@ -100,6 +101,7 @@ const updateUser = async (req, res) => {
     const currentUserId = req.body.current_user_id || req.user?.id || null;
 
     const user = await userService.updateUser(id, req.body, currentUserId, {
+      id: req.user?.id ?? null,
       role: req.user?.role ?? null,
       organisation_id: req.user?.organisation_id ?? null,
     });

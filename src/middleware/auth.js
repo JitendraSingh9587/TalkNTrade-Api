@@ -73,6 +73,9 @@ const authenticate = async (req, res, next) => {
     if (isPendingOrgAdmin) {
       const allowedPending =
         (req.method === "GET" && pathOnly === "/api/v1/auth/verify") ||
+        (req.method === "GET" && pathOnly === "/api/v1/auth/me") ||
+        (req.method === "PUT" && pathOnly === "/api/v1/auth/me") ||
+        (req.method === "POST" && pathOnly === "/api/v1/auth/me/avatar") ||
         (req.method === "POST" &&
           pathOnly === "/api/v1/auth/complete-organisation") ||
         (req.method === "POST" &&
@@ -127,6 +130,8 @@ const authenticate = async (req, res, next) => {
       email: user.email,
       role: user.role,
       name: user.name,
+      mobile: user.mobile,
+      avatar_url: user.avatar_url ?? null,
       organisation_id: user.organisation_id,
       organisation: org
         ? { id: org.id, name: org.name, status: org.status }

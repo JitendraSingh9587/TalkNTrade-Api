@@ -293,6 +293,26 @@ const ensureInvoiceLineItemsColumn = async () => {
   console.log("✅ Schema patch: added column invoices.line_items");
 };
 
+/** Profile image URL on users (optional). */
+const ensureUserAvatarUrlColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'avatar_url'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `users` ADD COLUMN `avatar_url` VARCHAR(512) NULL",
+  );
+  console.log("✅ Schema patch: added column users.avatar_url");
+};
+
 module.exports = {
   sequelize,
   connectDB,
@@ -304,4 +324,5 @@ module.exports = {
   ensureInvoiceProductIdColumn,
   ensureOrganisationGstNumberColumn,
   ensureInvoiceLineItemsColumn,
+  ensureUserAvatarUrlColumn,
 };

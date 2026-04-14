@@ -1,7 +1,12 @@
+const fs = require("fs");
 const authService = require("../services/authService");
+const userService = require("../services/userService");
 const organisationService = require("../services/organisationService");
+const localMediaStorage = require("../services/localMediaStorage");
+const mediaService = require("../services/mediaService");
 const { User, Organisation } = require("../models");
 const { validateLogin } = require("../validators/authValidator");
+const { validateUpdateUser } = require("../validators/userValidator");
 const {
   validateOrganisationPayload,
 } = require("../validators/organisationValidator");
@@ -11,6 +16,26 @@ const {
   getTokenExpiry,
 } = require("../shared/utils/jwt");
 const organisationSetupUploadService = require("../services/organisationSetupUploadService");
+
+const AVATAR_IMAGE_MIMES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+function tryRemoveOldUserAvatarFile(avatarUrl, userId) {
+  if (!avatarUrl || typeof avatarUrl !== "string") return;
+  const m = avatarUrl.match(/\/api\/v1\/media\/user-avatar\/(\d+)\/([^/?#]+)$/i);
+  if (!m) return;
+  if (parseInt(m[1], 10) !== parseInt(userId, 10)) return;
+  try {
+    const storage_key = `user_avatars/${m[1]}/${m[2]}`.replace(/\\/g, "/");
+    localMediaStorage.removeFile(storage_key);
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
  * Auth Controller
@@ -138,6 +163,124 @@ const verifyToken = async (req, res) => {
   sendSuccess(res, { valid: true, user: req.user }, "Token valid");
 };
 
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Organisation,
+          as: "organisation",
+          attributes: ["id", "name", "status"],
+        },
+      ],
+    });
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+    sendSuccess(res, user.toJSON(), "Profile loaded");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+const updateMe = async (req, res) => {
+  try {
+    const allowed = ["name", "mobile", "password", "avatar_url"];
+    const payload = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) payload[k] = req.body[k];
+    }
+    if (payload.password !== undefined && !String(payload.password).trim()) {
+      delete payload.password;
+    }
+    const validation = validateUpdateUser(payload);
+    if (!validation.isValid) {
+      return sendError(res, validation.errors.join(", "), 400);
+    }
+    let prevAvatarUrl = null;
+    if (payload.avatar_url === null) {
+      const row = await User.findByPk(req.user.id, {
+        attributes: ["avatar_url"],
+      });
+      prevAvatarUrl = row?.avatar_url || null;
+    }
+    const user = await userService.updateUser(
+      req.user.id,
+      payload,
+      req.user.id,
+      {
+        id: req.user.id,
+        role: req.user.role,
+        organisation_id: req.user.organisation_id,
+      },
+    );
+    if (payload.avatar_url === null && prevAvatarUrl) {
+      tryRemoveOldUserAvatarFile(prevAvatarUrl, req.user.id);
+    }
+    sendSuccess(res, user, "Profile updated");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
+const uploadMyAvatar = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file || !file.buffer) {
+      return sendError(res, "file is required (multipart field: file)", 400);
+    }
+    const mime = String(file.mimetype || "").toLowerCase();
+    if (!AVATAR_IMAGE_MIMES.has(mime)) {
+      return sendError(
+        res,
+        "Only JPEG, PNG, WebP, or GIF images are allowed",
+        400,
+      );
+    }
+    const max = mediaService.getMaxUploadBytes();
+    if (file.size > max) {
+      return sendError(res, `File too large. Maximum size is ${max} bytes`, 400);
+    }
+
+    const userRow = await User.findByPk(req.user.id);
+    if (!userRow) {
+      return sendError(res, "User not found", 404);
+    }
+
+    const prevUrl = userRow.avatar_url;
+    const { absolutePath, filename } = localMediaStorage.allocateUserAvatarPath(
+      req.user.id,
+      mime,
+      file.originalname,
+    );
+    try {
+      fs.writeFileSync(absolutePath, file.buffer);
+    } catch {
+      return sendError(res, "Could not store uploaded file", 500);
+    }
+
+    const avatarPath = `/api/v1/media/user-avatar/${req.user.id}/${filename}`;
+    await userRow.update({ avatar_url: avatarPath });
+
+    tryRemoveOldUserAvatarFile(prevUrl, req.user.id);
+
+    const refreshed = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Organisation,
+          as: "organisation",
+          attributes: ["id", "name", "status"],
+        },
+      ],
+    });
+    sendSuccess(res, refreshed.toJSON(), "Profile photo updated");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 /**
  * ADMIN without organisation: create org and link account (after email signup).
  */
@@ -203,6 +346,9 @@ module.exports = {
   login,
   logout,
   verifyToken,
+  getMe,
+  updateMe,
+  uploadMyAvatar,
   uploadOrganisationSetupAsset,
   completeOrganisation,
 };

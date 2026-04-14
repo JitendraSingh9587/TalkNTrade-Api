@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mediaService = require("../services/mediaService");
+const localMediaStorage = require("../services/localMediaStorage");
 const organisationSetupUploadService = require("../services/organisationSetupUploadService");
 const { validateMediaMetadata } = require("../validators/mediaValidator");
 const { sendSuccess, sendError } = require("../utils/response");
@@ -117,8 +118,38 @@ const servePublicMedia = async (req, res) => {
 };
 
 /**
- * Public: organisation setup uploads (logo / banner) before an organisation exists.
+ * Public: user profile avatars (opaque filename).
  */
+const serveUserAvatar = async (req, res) => {
+  try {
+    const { userId, filename } = req.params;
+    const absolutePath = localMediaStorage.resolveUserAvatarPublicFile(
+      userId,
+      filename,
+    );
+    if (!fs.existsSync(absolutePath)) {
+      return sendError(res, "Not found", 404);
+    }
+    const ct = organisationSetupUploadService.mimeForFilename(filename);
+    res.setHeader("Content-Type", ct);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(filename)}"`,
+    );
+    res.sendFile(path.resolve(absolutePath), (err) => {
+      if (err && !res.headersSent) {
+        sendError(res, "Not found", 404);
+      }
+    });
+  } catch (error) {
+    const code = error.statusCode || 500;
+    if (code === 404) {
+      return sendError(res, "Not found", 404);
+    }
+    sendError(res, error.message, code);
+  }
+};
+
 const serveOrgSetupAsset = async (req, res) => {
   try {
     const { kind, filename } = req.params;
@@ -156,5 +187,6 @@ module.exports = {
   updateMedia,
   deleteMedia,
   servePublicMedia,
+  serveUserAvatar,
   serveOrgSetupAsset,
 };

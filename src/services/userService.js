@@ -25,9 +25,16 @@ function assertAdminSameOrganisation(
   actorOrgId,
   targetUser,
   actionLabel,
+  actorId = null,
 ) {
   if (actorRole !== "ADMIN") return;
   if (!actorOrgId) {
+    if (
+      actorId != null &&
+      parseInt(String(actorId), 10) === parseInt(String(targetUser.id), 10)
+    ) {
+      return;
+    }
     const error = new Error("Your account is not linked to an organisation");
     error.statusCode = 403;
     throw error;
@@ -117,7 +124,23 @@ const getUserById = async (id, actor = {}) => {
     throw error;
   }
 
-  assertAdminSameOrganisation(actor.role, actor.organisation_id, user, "view");
+  assertAdminSameOrganisation(
+    actor.role,
+    actor.organisation_id,
+    user,
+    "view",
+    actor.id,
+  );
+
+  if (
+    (actor.role === "USER" || actor.role === "SUPERVISOR") &&
+    actor.id != null &&
+    parseInt(actor.id, 10) !== parseInt(id, 10)
+  ) {
+    const error = new Error("You can only view your own account");
+    error.statusCode = 403;
+    throw error;
+  }
 
   return user;
 };
@@ -248,8 +271,45 @@ const updateUser = async (id, updateData, currentUserId = null, actor = {}) => {
 
   const actorRole = actor.role ?? null;
   const actorOrgId = actor.organisation_id ?? null;
+  const actorId =
+    actor.id != null && !Number.isNaN(parseInt(actor.id, 10))
+      ? parseInt(actor.id, 10)
+      : null;
+  const targetId = parseInt(id, 10);
 
-  assertAdminSameOrganisation(actorRole, actorOrgId, user, "modify");
+  let payload = { ...updateData };
+  delete payload.email;
+
+  if (payload.password !== undefined && !String(payload.password).trim()) {
+    delete payload.password;
+  }
+
+  if (actorRole === "USER" || actorRole === "SUPERVISOR") {
+    if (actorId == null || actorId !== targetId) {
+      const error = new Error("You can only update your own account");
+      error.statusCode = 403;
+      throw error;
+    }
+    const allowed = new Set([
+      "name",
+      "mobile",
+      "password",
+      "avatar_url",
+    ]);
+    const next = {};
+    for (const k of Object.keys(payload)) {
+      if (allowed.has(k)) next[k] = payload[k];
+    }
+    payload = next;
+  }
+
+  assertAdminSameOrganisation(
+    actorRole,
+    actorOrgId,
+    user,
+    "modify",
+    actor.id,
+  );
 
   if (actorRole === "ADMIN" && user.role === "SUPER_ADMIN") {
     const error = new Error("Admins cannot modify super admin accounts");
@@ -257,7 +317,7 @@ const updateUser = async (id, updateData, currentUserId = null, actor = {}) => {
     throw error;
   }
 
-  if (actorRole === "ADMIN" && updateData.role === "SUPER_ADMIN") {
+  if (actorRole === "ADMIN" && payload.role === "SUPER_ADMIN") {
     const error = new Error(
       "Only a super admin can assign the super admin role",
     );
@@ -269,60 +329,48 @@ const updateUser = async (id, updateData, currentUserId = null, actor = {}) => {
     user.role === "SUPER_ADMIN" &&
     currentUserId &&
     parseInt(id, 10) === parseInt(currentUserId, 10) &&
-    updateData.role &&
-    updateData.role !== user.role
+    payload.role &&
+    payload.role !== user.role
   ) {
     const error = new Error("Super admin cannot change their own role");
     error.statusCode = 403;
     throw error;
   }
 
-  if (updateData.role === "SUPER_ADMIN") {
-    updateData.organisation_id = null;
+  if (payload.role === "SUPER_ADMIN") {
+    payload.organisation_id = null;
   }
 
   if (actorRole === "ADMIN") {
-    delete updateData.organisation_id;
+    delete payload.organisation_id;
   }
 
-  if (updateData.organisation_id !== undefined) {
+  if (payload.organisation_id !== undefined) {
     if (user.role === "SUPER_ADMIN") {
       const error = new Error("Cannot assign an organisation to a super admin");
       error.statusCode = 400;
       throw error;
     }
-    const oid = parseInt(updateData.organisation_id, 10);
+    const oid = parseInt(payload.organisation_id, 10);
     if (Number.isNaN(oid)) {
       const error = new Error("Invalid organisation_id");
       error.statusCode = 400;
       throw error;
     }
     await organisationService.requireActiveOrganisation(oid);
-    updateData.organisation_id = oid;
-  }
-
-  if (updateData.email && updateData.email !== user.email) {
-    const existingUser = await User.findOne({
-      where: { email: updateData.email },
-    });
-
-    if (existingUser) {
-      const error = new Error("Email already exists");
-      error.statusCode = 409;
-      throw error;
-    }
+    payload.organisation_id = oid;
   }
 
   if (
-    updateData.mobile !== undefined &&
-    String(updateData.mobile).trim() !== ""
+    payload.mobile !== undefined &&
+    String(payload.mobile).trim() !== ""
   ) {
-    updateData.mobile = normalizeUserMobile(updateData.mobile);
+    payload.mobile = normalizeUserMobile(payload.mobile);
   }
 
-  if (updateData.mobile && updateData.mobile !== user.mobile) {
+  if (payload.mobile && payload.mobile !== user.mobile) {
     const existingUser = await User.findOne({
-      where: { mobile: updateData.mobile },
+      where: { mobile: payload.mobile },
     });
 
     if (existingUser) {
@@ -332,11 +380,11 @@ const updateUser = async (id, updateData, currentUserId = null, actor = {}) => {
     }
   }
 
-  if (updateData.password) {
-    updateData.password = await hashPassword(updateData.password);
+  if (payload.password) {
+    payload.password = await hashPassword(payload.password);
   }
 
-  await user.update(updateData);
+  await user.update(payload);
 
   const refreshed = await User.findByPk(user.id, {
     attributes: { exclude: ["password"] },

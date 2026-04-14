@@ -74,14 +74,8 @@ const validateUpdateUser = (data) => {
     }
   }
 
-  if (data.email !== undefined) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      errors.push("Invalid email format");
-    }
-    if (data.email.length > 191) {
-      errors.push("Email must be less than 191 characters");
-    }
+  if (Object.prototype.hasOwnProperty.call(data, "email")) {
+    errors.push("Email address cannot be changed");
   }
 
   if (data.mobile !== undefined) {
@@ -102,6 +96,13 @@ const validateUpdateUser = (data) => {
     const validRoles = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "USER"];
     if (!validRoles.includes(data.role)) {
       errors.push(`Role must be one of: ${validRoles.join(", ")}`);
+    }
+  }
+
+  if (data.avatar_url !== undefined && data.avatar_url !== null) {
+    const s = String(data.avatar_url).trim();
+    if (s.length > 512) {
+      errors.push("avatar_url must be at most 512 characters");
     }
   }
 

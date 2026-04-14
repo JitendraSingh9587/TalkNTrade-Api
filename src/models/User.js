@@ -79,6 +79,12 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+
+    /** Public path or absolute URL to profile image (e.g. /api/v1/media/user-avatar/{id}/{file}) */
+    avatar_url: {
+      type: DataTypes.STRING(512),
+      allowNull: true,
+    },
   },
   {
     tableName: "users",

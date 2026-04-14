@@ -116,6 +116,52 @@ function allocateOrgSetupAssetPath(kind, mime, originalFilename = "") {
   return { absolutePath, storage_key, filename: base };
 }
 
+/**
+ * Profile avatars: uploads/media/user_avatars/{userId}/{uuid}.ext
+ * @param {number|string} userId
+ * @param {string} mime
+ * @param {string} [originalFilename]
+ * @returns {{ absolutePath: string, storage_key: string, filename: string }}
+ */
+function allocateUserAvatarPath(userId, mime, originalFilename = "") {
+  const uid = String(parseInt(userId, 10) || 0);
+  const sub = `user_avatars/${uid}`;
+  const dir = path.join(getStorageRoot(), ...sub.split("/"));
+  fs.mkdirSync(dir, { recursive: true });
+  let ext = extFromImageMime(mime);
+  if (!ext) {
+    const e = path.extname(originalFilename || "").toLowerCase();
+    if ([".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(e)) {
+      ext = e === ".jpeg" ? ".jpg" : e;
+    }
+  }
+  if (!ext) ext = ".png";
+  const base = `${randomUUID()}${ext}`;
+  const absolutePath = path.join(dir, base);
+  const storage_key = path.join(sub, base).replace(/\\/g, "/");
+  return { absolutePath, storage_key, filename: base };
+}
+
+/**
+ * @param {number|string} userId
+ * @param {string} filename
+ * @returns {string} absolute path
+ */
+function resolveUserAvatarPublicFile(userId, filename) {
+  const uid = String(parseInt(userId, 10) || 0);
+  const name = String(filename || "").trim();
+  if (!/^[0-9a-f-]{36}\.(jpe?g|png|webp|gif)$/i.test(name)) {
+    const err = new Error("Not found");
+    err.statusCode = 404;
+    throw err;
+  }
+  const storage_key = path.join(`user_avatars/${uid}`, name).replace(
+    /\\/g,
+    "/",
+  );
+  return resolveAbsolutePath(storage_key);
+}
+
 module.exports = {
   getStorageRoot,
   allocatePath,
@@ -123,4 +169,6 @@ module.exports = {
   removeFile,
   allocateOrgSetupAssetPath,
   orgSetupSubdir,
+  allocateUserAvatarPath,
+  resolveUserAvatarPublicFile,
 };

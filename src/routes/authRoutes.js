@@ -4,6 +4,9 @@ const asyncHandler = require("../utils/asyncHandler");
 const { uploadMediaSingle } = require("../middleware/mediaUpload");
 const {
   verifyToken,
+  getMe,
+  updateMe,
+  uploadMyAvatar,
   completeOrganisation,
   uploadOrganisationSetupAsset,
 } = require("../controllers/authController");
@@ -30,6 +33,14 @@ const {
  *         description: Missing, invalid, or expired token
  */
 router.get("/verify", asyncHandler(verifyToken));
+
+router.get("/me", asyncHandler(getMe));
+router.put("/me", asyncHandler(updateMe));
+router.post(
+  "/me/avatar",
+  uploadMediaSingle,
+  asyncHandler(uploadMyAvatar),
+);
 
 router.post(
   "/organisation-setup/upload",

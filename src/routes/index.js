@@ -62,6 +62,10 @@ router.get(
   "/v1/media/org-setup/:kind/:filename",
   asyncHandler(mediaController.serveOrgSetupAsset),
 );
+router.get(
+  "/v1/media/user-avatar/:userId/:filename",
+  asyncHandler(mediaController.serveUserAvatar),
+);
 
 // --- All routes below require a valid access token (cookie or Bearer) ---
 router.use(authenticate);
