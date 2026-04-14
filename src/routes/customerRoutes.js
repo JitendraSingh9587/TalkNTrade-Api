@@ -5,6 +5,7 @@ const { authorize } = require("../middleware/authorize");
 const {
   listCustomers,
   listAssignableUsers,
+  lookupCustomerByPhone,
   createCustomer,
   getCustomerById,
   updateCustomer,
@@ -26,6 +27,11 @@ router.get(
   "/assignable-users",
   authorize(...WRITE_ROLES),
   asyncHandler(listAssignableUsers),
+);
+router.get(
+  "/lookup-by-phone",
+  authorize(...READ_ROLES),
+  asyncHandler(lookupCustomerByPhone),
 );
 router.get("/", authorize(...READ_ROLES), asyncHandler(listCustomers));
 router.get("/:id", authorize(...READ_ROLES), asyncHandler(getCustomerById));

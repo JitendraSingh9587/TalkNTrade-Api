@@ -76,9 +76,19 @@ const deleteCustomer = async (req, res) => {
   }
 };
 
+const lookupCustomerByPhone = async (req, res) => {
+  try {
+    const result = await customerService.lookupCustomerByPhone(req.user, req.query);
+    sendSuccess(res, result, "Lookup completed");
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   listCustomers,
   listAssignableUsers,
+  lookupCustomerByPhone,
   createCustomer,
   getCustomerById,
   updateCustomer,

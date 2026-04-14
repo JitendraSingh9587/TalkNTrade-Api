@@ -351,6 +351,113 @@ function customerRowDiffersFromNormalized(existing, normalized) {
  * @param {object} opts
  * @param {import("sequelize").Transaction} [opts.transaction]
  */
+/**
+ * Digit-match score: exact phone match best, then substring matches (earlier/shorter preferred).
+ */
+function phoneDigitsMatchScore(targetDigits, phoneDigits, altDigits) {
+  let best = Infinity;
+  for (const d of [phoneDigits, altDigits]) {
+    if (!d) continue;
+    if (d === targetDigits) {
+      best = Math.min(best, 0);
+    } else if (d.includes(targetDigits)) {
+      const idx = d.indexOf(targetDigits);
+      best = Math.min(best, 10 + idx);
+    }
+  }
+  return best;
+}
+
+/**
+ * All customers in an organisation whose phone or alternate_phone digit string
+ * contains the typed digits (min 8). Results capped and ordered by match quality.
+ * @param {object} query — { phone, organisation_id? for SUPER_ADMIN }
+ * @returns {Promise<{ customers: object[], customer: object | null }>}
+ */
+const lookupCustomerByPhone = async (actor, query) => {
+  const rawPhone = query.phone;
+  if (rawPhone === undefined || rawPhone === null || !String(rawPhone).trim()) {
+    const err = new Error("phone query parameter is required");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  let orgId;
+  if (actor.role === "SUPER_ADMIN") {
+    const n = parseInt(query.organisation_id, 10);
+    if (
+      query.organisation_id === undefined ||
+      query.organisation_id === null ||
+      query.organisation_id === "" ||
+      Number.isNaN(n) ||
+      n < 1
+    ) {
+      const err = new Error("organisation_id query parameter is required");
+      err.statusCode = 400;
+      throw err;
+    }
+    orgId = n;
+    assertActorCanAccessOrg(actor, orgId);
+  } else {
+    if (!actor.organisation_id) {
+      const err = new Error("Your account is not linked to an organisation");
+      err.statusCode = 403;
+      throw err;
+    }
+    orgId = parseInt(actor.organisation_id, 10);
+  }
+
+  const targetDigits = digitsOnly(rawPhone);
+  if (targetDigits.length < 8) {
+    return { customers: [], customer: null };
+  }
+
+  const candidates = await Customer.findAll({
+    where: { organisation_id: orgId },
+    attributes: ["id", "phone", "alternate_phone", "full_name"],
+    limit: 5000,
+  });
+
+  const scored = [];
+  for (const c of candidates) {
+    const dPhone = digitsOnly(c.phone);
+    const dAlt = digitsOnly(c.alternate_phone);
+    const score = phoneDigitsMatchScore(targetDigits, dPhone, dAlt);
+    if (score < Infinity) {
+      scored.push({
+        id: c.id,
+        score,
+        name: String(c.full_name || ""),
+      });
+    }
+  }
+  scored.sort((a, b) => {
+    if (a.score !== b.score) return a.score - b.score;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+
+  const topIds = scored.slice(0, 50).map((x) => x.id);
+  if (topIds.length === 0) {
+    return { customers: [], customer: null };
+  }
+
+  const rows = await Customer.findAll({
+    where: { id: { [Op.in]: topIds } },
+    include: [
+      {
+        model: Organisation,
+        as: "organisation",
+        attributes: ["id", "name"],
+      },
+      assigneeInclude,
+    ],
+  });
+  const orderMap = new Map(topIds.map((id, i) => [id, i]));
+  rows.sort((a, b) => orderMap.get(a.id) - orderMap.get(b.id));
+
+  return { customers: rows, customer: rows[0] ?? null };
+};
+
 const upsertCustomerByMobileForOrg = async (actor, orgId, normalized, opts = {}) => {
   const { transaction } = opts;
   assertActorCanAccessOrg(actor, orgId);
@@ -410,5 +517,6 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   listAssignableUsers,
+  lookupCustomerByPhone,
   upsertCustomerByMobileForOrg,
 };
