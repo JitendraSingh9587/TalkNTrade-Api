@@ -192,6 +192,7 @@ const organisationDetailInclude = {
     "email",
     "website",
     "type",
+    "logo_url",
   ],
 };
 
