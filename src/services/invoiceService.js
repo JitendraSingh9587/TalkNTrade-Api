@@ -294,6 +294,13 @@ function assertProductSaleTotalForRole(actor, product, totalAmount) {
   }
 }
 
+/** Per-line unit price check for USER/SUPERVISOR (line total ÷ qty). */
+function assertProductSaleLineForRole(actor, product, lineTotal, quantity) {
+  const q = Math.max(1, parseInt(quantity, 10) || 1);
+  const unit = round2(num(lineTotal) / q);
+  assertProductSaleTotalForRole(actor, product, unit);
+}
+
 function pickPositiveMoney(v) {
   const n = Number(v);
   if (!Number.isFinite(n) || n <= 0) return null;
@@ -626,6 +633,166 @@ const createInvoiceFromProductSale = async (actor, validated) => {
   });
 };
 
+const createInvoiceFromMultiProductSale = async (actor, normalized) => {
+  assertCanRecordProductSale(actor);
+  const {
+    lines,
+    customer: customerNorm,
+    discount_amount,
+    paid_amount,
+    payment_mode,
+    invoice_number,
+    invoice_notes,
+    organisation_id: bodyOrgId,
+    final_amount: bodyFinal,
+    computed_subtotal,
+  } = normalized;
+
+  return sequelize.transaction(async (transaction) => {
+    const sorted = [...lines].sort((a, b) => a.product_id - b.product_id);
+    const pairs = [];
+    for (const line of sorted) {
+      const product = await Product.findByPk(line.product_id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!product) {
+        const err = new Error(`Product not found: ${line.product_id}`);
+        err.statusCode = 404;
+        throw err;
+      }
+      pairs.push({ product, line });
+    }
+
+    const orgId = parseInt(pairs[0].product.organisation_id, 10);
+    for (const { product } of pairs) {
+      if (parseInt(product.organisation_id, 10) !== orgId) {
+        const err = new Error(
+          "All products on the invoice must belong to the same organisation",
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    assertActorCanAccessOrg(actor, orgId);
+    if (
+      actor.role === "SUPER_ADMIN" &&
+      bodyOrgId != null &&
+      parseInt(bodyOrgId, 10) !== orgId
+    ) {
+      const err = new Error(
+        "organisation_id does not match these products' organisation",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const upsert = await customerService.upsertCustomerByMobileForOrg(
+      actor,
+      orgId,
+      customerNorm,
+      { transaction },
+    );
+    const customer = upsert.customer;
+
+    for (const { product, line } of pairs) {
+      if (product.is_sold) {
+        const err = new Error(
+          `Product "${product.name}" (id ${product.id}) is already marked as sold`,
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+      assertProductSaleLineForRole(
+        actor,
+        product,
+        line.total_amount,
+        line.quantity,
+      );
+    }
+
+    const subtotal = round2(num(computed_subtotal));
+    const discount = discount_amount ?? 0;
+    let final_amount = bodyFinal;
+    if (final_amount === undefined || final_amount === null) {
+      final_amount = round2(subtotal - discount);
+    }
+
+    const amounts = assertAmountConsistency(subtotal, discount, final_amount);
+    const paidDerived = derivePaidAndStatus(amounts.final_amount, paid_amount);
+
+    let invNo = invoice_number;
+    if (!invNo) {
+      invNo = `SALE-MULTI-${Date.now()}`;
+    }
+    await assertUniqueInvoiceNumber(orgId, invNo, null, transaction);
+
+    const lineSnapshot = pairs.map(({ product, line }) => ({
+      product_id: product.id,
+      quantity: line.quantity,
+      total_amount: line.total_amount,
+      name: product.name,
+      brand_name: product.brand_name,
+      model_name: product.model_name,
+      variant: product.variant,
+      imei_number: product.imei_number,
+    }));
+
+    const invoice = await Invoice.create(
+      {
+        organisation_id: orgId,
+        invoice_number: invNo,
+        customer_id: customer.id,
+        product_id: pairs[0].product.id,
+        total_amount: amounts.total_amount,
+        discount_amount: amounts.discount_amount,
+        final_amount: amounts.final_amount,
+        paid_amount: paidDerived.paid_amount,
+        remaining_amount: paidDerived.remaining_amount,
+        payment_status: paidDerived.payment_status,
+        payment_mode,
+        notes: invoice_notes,
+        line_items: lineSnapshot,
+      },
+      { transaction },
+    );
+
+    for (const { product } of pairs) {
+      await product.update(
+        { is_sold: true, sold_at: new Date() },
+        { transaction },
+      );
+    }
+
+    await invoice.reload({
+      transaction,
+      include: [
+        {
+          model: Organisation,
+          as: "organisation",
+          attributes: ["id", "name"],
+        },
+        customerInclude,
+        productInclude,
+      ],
+    });
+
+    return {
+      invoice,
+      customer: {
+        id: customer.id,
+        created: upsert.created,
+        updated: upsert.updated,
+      },
+      products: lineSnapshot.map((r) => ({
+        id: r.product_id,
+        is_sold: true,
+      })),
+    };
+  });
+};
+
 const deleteInvoice = async (actor, rawId) => {
   if (actor.role !== "SUPER_ADMIN" && actor.role !== "ADMIN") {
     const err = new Error("Only administrators can archive invoices");
@@ -651,4 +818,5 @@ module.exports = {
   updateInvoice,
   deleteInvoice,
   createInvoiceFromProductSale,
+  createInvoiceFromMultiProductSale,
 };

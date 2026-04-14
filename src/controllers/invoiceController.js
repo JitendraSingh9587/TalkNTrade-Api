@@ -1,6 +1,9 @@
 const invoiceService = require("../services/invoiceService");
 const { validateInvoicePayload } = require("../validators/invoiceValidator");
 const { validateProductSalePayload } = require("../validators/productSaleValidator");
+const {
+  validateMultiProductSalePayload,
+} = require("../validators/multiProductSaleValidator");
 const { sendSuccess, sendError } = require("../utils/response");
 
 const listInvoices = async (req, res) => {
@@ -87,6 +90,22 @@ const createInvoiceFromProductSale = async (req, res) => {
   }
 };
 
+const createInvoiceFromMultiProductSale = async (req, res) => {
+  try {
+    const validation = validateMultiProductSalePayload(req.body);
+    if (!validation.isValid) {
+      return sendError(res, validation.errors.join(", "), 400);
+    }
+    const result = await invoiceService.createInvoiceFromMultiProductSale(
+      req.user,
+      validation.normalized,
+    );
+    sendSuccess(res, result, "Multi-product sale recorded successfully", 201);
+  } catch (error) {
+    sendError(res, error.message, error.statusCode || 500);
+  }
+};
+
 module.exports = {
   listInvoices,
   createInvoice,
@@ -94,4 +113,5 @@ module.exports = {
   updateInvoice,
   deleteInvoice,
   createInvoiceFromProductSale,
+  createInvoiceFromMultiProductSale,
 };

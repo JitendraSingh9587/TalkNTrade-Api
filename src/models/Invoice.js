@@ -70,6 +70,11 @@ const Invoice = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    /** Multi-product sale snapshot: [{ product_id, quantity, total_amount, name, ... }] */
+    line_items: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
   },
   {
     tableName: "invoices",

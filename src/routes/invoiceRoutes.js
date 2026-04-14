@@ -6,6 +6,7 @@ const {
   listInvoices,
   createInvoice,
   createInvoiceFromProductSale,
+  createInvoiceFromMultiProductSale,
   getInvoiceById,
   updateInvoice,
   deleteInvoice,
@@ -26,6 +27,11 @@ router.post(
   "/from-product-sale",
   authorize(...WRITE_ROLES),
   asyncHandler(createInvoiceFromProductSale),
+);
+router.post(
+  "/from-multi-product-sale",
+  authorize(...WRITE_ROLES),
+  asyncHandler(createInvoiceFromMultiProductSale),
 );
 router.get("/", authorize(...READ_ROLES), asyncHandler(listInvoices));
 router.get("/:id", authorize(...READ_ROLES), asyncHandler(getInvoiceById));

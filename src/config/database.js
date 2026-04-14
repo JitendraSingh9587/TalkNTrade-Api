@@ -273,6 +273,26 @@ const ensureOrganisationGstNumberColumn = async () => {
   console.log("✅ Schema patch: added column organisations.gst_number");
 };
 
+/** Multi-product sale snapshot on invoices. */
+const ensureInvoiceLineItemsColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'invoices'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'line_items'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `invoices` ADD COLUMN `line_items` JSON NULL",
+  );
+  console.log("✅ Schema patch: added column invoices.line_items");
+};
+
 module.exports = {
   sequelize,
   connectDB,
@@ -283,4 +303,5 @@ module.exports = {
   ensureBrandCatalogVerificationColumns,
   ensureInvoiceProductIdColumn,
   ensureOrganisationGstNumberColumn,
+  ensureInvoiceLineItemsColumn,
 };
