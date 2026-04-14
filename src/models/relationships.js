@@ -167,6 +167,16 @@ const defineRelationships = () => {
     foreignKey: "customer_id",
     as: "customer",
   });
+
+  Product.hasMany(Invoice, {
+    foreignKey: "product_id",
+    as: "invoices",
+  });
+
+  Invoice.belongsTo(Product, {
+    foreignKey: "product_id",
+    as: "product",
+  });
 };
 
 module.exports = defineRelationships;

@@ -5,6 +5,7 @@ const { authorize } = require("../middleware/authorize");
 const {
   listInvoices,
   createInvoice,
+  createInvoiceFromProductSale,
   getInvoiceById,
   updateInvoice,
   deleteInvoice,
@@ -21,6 +22,11 @@ const DELETE_ROLES = ["SUPER_ADMIN", "ADMIN"];
  *   description: Organisation-scoped invoices (soft delete)
  */
 
+router.post(
+  "/from-product-sale",
+  authorize(...WRITE_ROLES),
+  asyncHandler(createInvoiceFromProductSale),
+);
 router.get("/", authorize(...READ_ROLES), asyncHandler(listInvoices));
 router.get("/:id", authorize(...READ_ROLES), asyncHandler(getInvoiceById));
 router.post("/", authorize(...WRITE_ROLES), asyncHandler(createInvoice));

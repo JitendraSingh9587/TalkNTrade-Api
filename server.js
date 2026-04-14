@@ -4,6 +4,7 @@ const app = require("./src/app");
 const {
   connectDB,
   syncDB,
+  ensureInvoiceProductIdColumn,
   ensureMediaPublicTokenColumn,
   ensureProductWarrantyColumns,
   ensureProductMrpColumn,
@@ -28,6 +29,7 @@ const startServer = async () => {
     // alter: true - alters tables to match models without dropping data
     // Set DB_SYNC_ALTER=false in .env to disable auto-alter in production
     const shouldAlter = process.env.DB_SYNC_ALTER !== "false";
+    await ensureInvoiceProductIdColumn();
     await syncDB(false, shouldAlter);
     await ensureMediaPublicTokenColumn();
     await ensureProductWarrantyColumns();

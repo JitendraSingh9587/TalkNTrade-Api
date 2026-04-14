@@ -183,6 +183,30 @@ const ensureProductMrpColumn = async () => {
   console.log("✅ Schema patch: added column products.mrp");
 };
 
+/**
+ * Sequelize sync({ alter }) on MySQL may try to add an index on `product_id`
+ * before the column exists on existing `invoices` tables. Ensure the column
+ * exists first so sync can complete.
+ */
+const ensureInvoiceProductIdColumn = async () => {
+  const [tables] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'invoices'`,
+  );
+  if (Number(tables[0]?.c ?? 0) === 0) return;
+
+  const [rows] = await sequelize.query(
+    `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'product_id'`,
+  );
+  if (Number(rows[0]?.c ?? 0) > 0) return;
+
+  await sequelize.query(
+    "ALTER TABLE `invoices` ADD COLUMN `product_id` BIGINT UNSIGNED NULL",
+  );
+  console.log("✅ Schema patch: added column invoices.product_id");
+};
+
 const ensureBrandCatalogVerificationColumns = async () => {
   const [brandTables] = await sequelize.query(
     `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
@@ -237,4 +261,5 @@ module.exports = {
   ensureProductWarrantyColumns,
   ensureProductMrpColumn,
   ensureBrandCatalogVerificationColumns,
+  ensureInvoiceProductIdColumn,
 };

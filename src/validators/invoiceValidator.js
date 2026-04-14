@@ -63,6 +63,16 @@ function validateInvoicePayload(body, { partial = false } = {}) {
     if (!cid.ok) errors.push(cid.error);
     else normalized.customer_id = cid.value;
 
+    if (
+      body.product_id !== undefined &&
+      body.product_id !== null &&
+      body.product_id !== ""
+    ) {
+      const pid = requirePositiveInt(body.product_id, "product_id", true);
+      if (!pid.ok) errors.push(pid.error);
+      else normalized.product_id = pid.value;
+    }
+
     const total = nonNegativeMoney(body.total_amount, "total_amount", true);
     if (!total.ok) errors.push(total.error);
     else normalized.total_amount = total.value;
@@ -123,6 +133,15 @@ function validateInvoicePayload(body, { partial = false } = {}) {
       const cid = requirePositiveInt(body.customer_id, "customer_id", true);
       if (!cid.ok) errors.push(cid.error);
       else normalized.customer_id = cid.value;
+    }
+    if (body.product_id !== undefined) {
+      if (body.product_id === null || body.product_id === "") {
+        normalized.product_id = null;
+      } else {
+        const pid = requirePositiveInt(body.product_id, "product_id", true);
+        if (!pid.ok) errors.push(pid.error);
+        else normalized.product_id = pid.value;
+      }
     }
     if (body.total_amount !== undefined) {
       const total = nonNegativeMoney(body.total_amount, "total_amount", true);

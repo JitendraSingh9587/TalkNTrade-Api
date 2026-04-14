@@ -302,6 +302,107 @@ const listAssignableUsers = async (actor, query) => {
   return { users };
 };
 
+function digitsOnly(phone) {
+  return String(phone || "").replace(/\D/g, "");
+}
+
+function addressesEqual(a, b) {
+  return JSON.stringify(a || {}) === JSON.stringify(b || {});
+}
+
+function customerRowDiffersFromNormalized(existing, normalized) {
+  if (String(existing.full_name || "") !== String(normalized.full_name || "")) {
+    return true;
+  }
+  if (String(existing.phone || "").trim() !== String(normalized.phone || "").trim()) {
+    return true;
+  }
+  if (String(existing.email || "") !== String(normalized.email || "")) {
+    return true;
+  }
+  if (String(existing.alternate_phone || "") !== String(normalized.alternate_phone || "")) {
+    return true;
+  }
+  if (String(existing.company_name || "") !== String(normalized.company_name || "")) {
+    return true;
+  }
+  if (String(existing.gst_number || "") !== String(normalized.gst_number || "")) {
+    return true;
+  }
+  if (String(existing.customer_type || "") !== String(normalized.customer_type || "")) {
+    return true;
+  }
+  if (String(existing.notes || "") !== String(normalized.notes || "")) {
+    return true;
+  }
+  if (Boolean(existing.is_verified) !== Boolean(normalized.is_verified)) {
+    return true;
+  }
+  const a1 = existing.assigned_to != null ? parseInt(existing.assigned_to, 10) : null;
+  const a2 =
+    normalized.assigned_to != null ? parseInt(normalized.assigned_to, 10) : null;
+  if (a1 !== a2) return true;
+  if (!addressesEqual(existing.address, normalized.address)) return true;
+  return false;
+}
+
+/**
+ * Find customer by same mobile digits within org; create or update if fields changed.
+ * @param {object} opts
+ * @param {import("sequelize").Transaction} [opts.transaction]
+ */
+const upsertCustomerByMobileForOrg = async (actor, orgId, normalized, opts = {}) => {
+  const { transaction } = opts;
+  assertActorCanAccessOrg(actor, orgId);
+  await organisationService.requireActiveOrganisation(orgId);
+  await assertAssignableUser(orgId, normalized.assigned_to ?? null);
+
+  const targetDigits = digitsOnly(normalized.phone);
+  if (targetDigits.length < 8) {
+    const err = new Error("phone must include at least 8 digits");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const candidates = await Customer.findAll({
+    where: { organisation_id: orgId },
+    ...(transaction ? { transaction } : {}),
+    limit: 5000,
+  });
+  const existing = candidates.find((c) => digitsOnly(c.phone) === targetDigits);
+
+  if (!existing) {
+    const c = await Customer.create(
+      { organisation_id: orgId, ...normalized },
+      { transaction },
+    );
+    return { customer: c, created: true, updated: false };
+  }
+
+  if (!customerRowDiffersFromNormalized(existing, normalized)) {
+    return { customer: existing, created: false, updated: false };
+  }
+
+  await existing.update(
+    {
+      full_name: normalized.full_name,
+      phone: String(normalized.phone).trim(),
+      email: normalized.email,
+      alternate_phone: normalized.alternate_phone,
+      company_name: normalized.company_name,
+      gst_number: normalized.gst_number,
+      address: normalized.address,
+      customer_type: normalized.customer_type,
+      assigned_to: normalized.assigned_to,
+      notes: normalized.notes,
+      is_verified: normalized.is_verified,
+    },
+    { transaction },
+  );
+  await existing.reload({ transaction });
+  return { customer: existing, created: false, updated: true };
+};
+
 module.exports = {
   listCustomers,
   createCustomer,
@@ -309,4 +410,5 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   listAssignableUsers,
+  upsertCustomerByMobileForOrg,
 };

@@ -27,6 +27,12 @@ const Invoice = sequelize.define(
       allowNull: false,
       references: { model: "customers", key: "id" },
     },
+    /** Optional link when invoice is created from a product sale */
+    product_id: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+      references: { model: "products", key: "id" },
+    },
     total_amount: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
@@ -77,6 +83,7 @@ const Invoice = sequelize.define(
       { unique: true, fields: ["organisation_id", "invoice_number"] },
       { fields: ["organisation_id"] },
       { fields: ["customer_id"] },
+      { fields: ["product_id"] },
       { fields: ["payment_status"] },
       { fields: ["created_at"] },
     ],
