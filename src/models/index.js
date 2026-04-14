@@ -10,6 +10,7 @@ const Media = require("./Media");
 const Brand = require("./Brand");
 const BrandModel = require("./BrandModel");
 const Product = require("./Product");
+const Customer = require("./Customer");
 const defineRelationships = require("./relationships");
 
 /**
@@ -33,4 +34,5 @@ module.exports = {
   Brand,
   BrandModel,
   Product,
+  Customer,
 };

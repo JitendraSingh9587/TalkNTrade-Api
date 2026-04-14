@@ -7,6 +7,7 @@ const Media = require("./Media");
 const Brand = require("./Brand");
 const BrandModel = require("./BrandModel");
 const Product = require("./Product");
+const Customer = require("./Customer");
 
 /**
  * Define model relationships
@@ -124,6 +125,26 @@ const defineRelationships = () => {
   Product.belongsTo(BrandModel, {
     foreignKey: "model_id",
     as: "brandModel",
+  });
+
+  Organisation.hasMany(Customer, {
+    foreignKey: "organisation_id",
+    as: "customers",
+  });
+
+  Customer.belongsTo(Organisation, {
+    foreignKey: "organisation_id",
+    as: "organisation",
+  });
+
+  User.hasMany(Customer, {
+    foreignKey: "assigned_to",
+    as: "assignedCustomers",
+  });
+
+  Customer.belongsTo(User, {
+    foreignKey: "assigned_to",
+    as: "assignee",
   });
 };
 
