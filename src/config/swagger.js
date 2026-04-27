@@ -11,8 +11,14 @@ const swaggerOptions = {
     },
     servers: [
       {
+        url:
+          process.env.SWAGGER_SERVER_URL ||
+          "https://talkntrade-api.onrender.com",
+        description: "Primary server",
+      },
+      {
         url: `http://localhost:${process.env.PORT || 3000}`,
-        description: "Development server",
+        description: "Local development server",
       },
     ],
     components: {
