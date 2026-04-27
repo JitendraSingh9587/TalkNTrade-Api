@@ -50,6 +50,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// Browsers commonly request this; return no-content to avoid noisy 404 logs
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).set('Cache-Control', 'public, max-age=86400').end();
+});
+
 // Routes
 app.use('/api', routes);
 
