@@ -1,4 +1,54 @@
 const { Sequelize } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
+
+function parseBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  const v = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "y", "on"].includes(v)) return true;
+  if (["0", "false", "no", "n", "off"].includes(v)) return false;
+  return defaultValue;
+}
+
+function looksLikeTiDBCloudHost(host) {
+  if (!host) return false;
+  return String(host).toLowerCase().includes("tidbcloud.com");
+}
+
+function resolveSslCaFromEnv() {
+  const caValue = process.env.DB_SSL_CA;
+  if (!caValue) return undefined;
+
+  // If it's a path, read it; otherwise treat it as PEM contents.
+  const maybePath = path.isAbsolute(caValue)
+    ? caValue
+    : path.resolve(process.cwd(), caValue);
+  if (fs.existsSync(maybePath)) {
+    return fs.readFileSync(maybePath, "utf8");
+  }
+  return caValue;
+}
+
+function buildMySqlSslConfig() {
+  const host = process.env.DB_HOST;
+  const port = Number(process.env.DB_PORT || 3306);
+
+  // TiDB Cloud Serverless enforces TLS. Enable by default when it looks like TiDB.
+  const enabledByDefault = looksLikeTiDBCloudHost(host) || port === 4000;
+  const enabled = parseBoolean(process.env.DB_SSL, enabledByDefault);
+  if (!enabled) return undefined;
+
+  const rejectUnauthorized = parseBoolean(
+    process.env.DB_SSL_REJECT_UNAUTHORIZED,
+    true,
+  );
+  const ca = resolveSslCaFromEnv();
+
+  return {
+    rejectUnauthorized,
+    ...(ca ? { ca } : {}),
+  };
+}
 
 /**
  * Sequelize database connection instance
@@ -13,6 +63,10 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT || 3306,
     dialect: "mysql",
     logging: process.env.NODE_ENV === "development" ? console.log : false,
+    dialectOptions: (() => {
+      const ssl = buildMySqlSslConfig();
+      return ssl ? { ssl } : {};
+    })(),
     pool: {
       max: 5,
       min: 0,
@@ -93,6 +147,19 @@ const syncDB = async (force = false, alter = false) => {
         console.warn("⚠️  Tables exist but may not match models exactly.");
         return; // Don't throw, allow server to start
       }
+    }
+
+    // Handle duplicate index name (often caused by previous sync runs)
+    if (
+      error.name === "SequelizeDatabaseError" &&
+      error.parent &&
+      error.parent.code === "ER_DUP_KEYNAME"
+    ) {
+      console.warn(
+        `⚠️  Duplicate index detected during sync: ${error.parent.sqlMessage}`,
+      );
+      console.warn("⚠️  Continuing startup without failing sync.");
+      return;
     }
 
     console.error("❌ Error synchronizing database:", error.message);
